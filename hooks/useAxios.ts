@@ -1,18 +1,30 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance } from "axios";
 import { useEffect } from "react";
 
 // Create Axios instance with baseURL from .env
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.API_BASE_URL,
+  baseURL: "https://milk-delivery-api.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Interceptor to attach token to requests before sending
+// Function to get the token asynchronously
+const getToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    return token;
+  } catch (error) {
+    console.error("Error getting token:", error);
+    return null;
+  }
+};
+
+// Set up request interceptor
 axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = process.env.API_TOKEN;
+  async (config) => {
+    const token = await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

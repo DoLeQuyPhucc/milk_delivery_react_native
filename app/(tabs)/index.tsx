@@ -2,17 +2,26 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, Image, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts } from '@/redux/slides/productSlide';
+import { fetchProducts } from '@/redux/slices/productSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
-export default function HomeScreen() {
+type RootStackParamList = {
+  Home: undefined;
+  ProductDetail: { id: string };
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+
+const HomeScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const { products, status, error } = useSelector((state: RootState) => state.products);
 
   useEffect(() => {
-    console.log("Dispatching fetchProducts");
     dispatch(fetchProducts());
   }, [dispatch]);
 
@@ -22,81 +31,83 @@ export default function HomeScreen() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView>
-        <FlatList
-          ListHeaderComponent={
-            <View style={styles.container}>
-              <View style={styles.searchContainer}>
-                <TextInput style={styles.searchInput} placeholder="Search..." />
-                <View style={styles.iconContainer}>
-                  <TouchableOpacity style={styles.iconButton}>
-                    <Icon name="qr-code" size={24} color="#000" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconButton}>
-                    <Icon name="notifications" size={24} color="#000" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <Image
-                source={{ uri: 'https://cdn.tgdd.vn//News/1425889//sua-chua-th-true-milk-banner-845x264.png' }}
-                style={styles.bannerImage}
-              />
-              <View style={styles.iconGroupContainer}>
-                <View style={styles.icon}>
-                  <Text>TH True Milk</Text>
-                </View>
-                <View style={styles.icon}>
-                  <Text>Vinamilk</Text>
-                </View>
-                <View style={styles.icon}>
-                  <Text>Lothamilk</Text>
-                </View>
-              </View>
-              <View style={styles.promotionContainer}>
-                <Text style={styles.promotionTitle}>Khuyến Mãi Sắp Sàn</Text>
-                <FlatList
-                  horizontal
-                  data={promotionProducts}
-                  renderItem={({ item }) => (
-                    <View style={styles.product}>
-                      <Text>{item.name}</Text>
-                      <Image source={{ uri: item.productImage }} style={styles.productImage} />
-                      <Text>{item.description}</Text>
-                      <Text>{item.price} VND</Text>
-                      <Text>In Stock: {item.stockQuantity}</Text>
-                    </View>
-                  )}
-                  keyExtractor={(item) => item._id}
-                  showsHorizontalScrollIndicator={false}
-                />
-              </View>
-              <View style={styles.featuredContainer}>
-                <Text>Sản Phẩm Nổi Bật</Text>
-                <FlatList
-                  horizontal
-                  data={featuredProducts}
-                  renderItem={({ item }) => (
-                    <View style={styles.product}>
-                      <Text>{item.name}</Text>
-                      <Image source={{ uri: item.productImage }} style={styles.productImage} />
-                      <Text>{item.description}</Text>
-                      <Text>{item.price} VND</Text>
-                      <Text>In Stock: {item.stockQuantity}</Text>
-                    </View>
-                  )}
-                  keyExtractor={(item) => item._id}
-                  showsHorizontalScrollIndicator={false}
-                />
-              </View>
+        <ScrollView>
+        <View style={styles.container}>
+          <View style={styles.searchContainer}>
+            <TextInput style={styles.searchInput} placeholder="Search..." />
+            <View style={styles.iconContainer}>
+              <TouchableOpacity style={styles.iconButton}>
+                <Icon name="qr-code" size={24} color="#000" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <Icon name="notifications" size={24} color="#000" />
+              </TouchableOpacity>
             </View>
-          }
-          data={[]}
-          renderItem={null}
-          keyExtractor={() => 'dummy'}
-        />
+          </View>
+          <Image
+            source={{ uri: 'https://cdn.tgdd.vn//News/1425889//sua-chua-th-true-milk-banner-845x264.png' }}
+            style={styles.bannerImage}
+          />
+          <View style={styles.iconGroupContainer}>
+            <TouchableOpacity style={styles.icon}>
+              <Image source={require('@/assets/images/th-true-milk.png')} style={styles.iconImage} />
+              <Text style={styles.iconText}>TH True Milk</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.icon}>
+              <Image source={require('@/assets/images/vinamilk.png')} style={styles.iconImage} />
+              <Text style={styles.iconText}>Vinamilk</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.icon}>
+              <Image source={require('@/assets/images/lothamilk.png')} style={styles.iconImage} />
+              <Text style={styles.iconText}>Lothamilk</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.promotionContainer}>
+            <Text style={styles.promotionTitle}>Khuyến Mãi Sập Sàn</Text>
+            <FlatList
+              horizontal
+              data={promotionProducts}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigation.navigate('ProductDetail', { id: item._id })}>
+                  <View style={styles.product}>
+                    <Image source={{ uri: item.productImage }} style={styles.productImage} />
+                    <Text style={styles.productName}>{item.name}</Text>
+                    <Text style={styles.productPrice}>
+                      {item.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item._id}
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+          <View style={styles.featuredContainer}>
+            <Text style={styles.featuredTitle}>Sản Phẩm Nổi Bật</Text>
+            <FlatList
+              horizontal
+              data={featuredProducts}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigation.navigate('ProductDetail', { id: item._id })}>
+                  <View style={styles.product}>
+                    <Image source={{ uri: item.productImage }} style={styles.productImage} />
+                    <Text style={styles.productName}>{item.name}</Text>
+                    <Text style={styles.productPrice}>
+                      {item.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item._id}
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        </View>
+        </ScrollView>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -134,12 +145,21 @@ const styles = StyleSheet.create({
   },
   iconGroupContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     marginBottom: 20,
   },
   icon: {
-    width: '30%',
     alignItems: 'center',
+  },
+  iconImage: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+    marginBottom: 5,
+  },
+  iconText: {
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   promotionContainer: {
     marginBottom: 20,
@@ -160,15 +180,39 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 10,
     marginRight: 10,
+    width: 150,
+    height: 180,
   },
   featuredContainer: {
     marginBottom: 20,
   },
+  featuredTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
   productImage: {
-    width: 100,
-    height: 100,
+    width: '100%',
+    height: 80,
     resizeMode: 'contain',
     marginBottom: 10,
     borderRadius: 10,
   },
+  productName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  productPrice: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: 'red',
+  },
+  productDiscount: {
+    fontSize: 12,
+    color: 'green',
+  },
 });
+
+export default HomeScreen;

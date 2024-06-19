@@ -1,52 +1,23 @@
-import React, { useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "@/redux/slices/authSlice";
-import { RootState, AppDispatch } from "@/redux/store/store";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React from "react";
 import Spacing from "../constants/Spacing";
 import FontSize from "../constants/FontSize";
 import Colors from "../constants/Colors";
 import Font from "../constants/Font";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import AppTextInput from "../components/AppTextInput";
 
-const LoginScreen: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
+const RegisterScreen: React.FC = () => {
+
   const router = useRouter();
-  const { status, error } = useSelector((state: RootState) => state.auth);
-
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const userData = await dispatch(loginUser({ email, password })).unwrap();
-      await storeToken(userData.token);
-      router.replace('/(tabs)');
-    } catch (err) {
-      console.error('Login failed:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const storeToken = async (token: string) => {
-    try {
-      await AsyncStorage.setItem('token', token);
-    } catch (error) {
-      console.error('Error storing token:', error);
-    }
-  };
 
   return (
     <SafeAreaView>
@@ -68,17 +39,17 @@ const LoginScreen: React.FC = () => {
               marginVertical: Spacing * 3,
             }}
           >
-            Login here
+            Create account
           </Text>
           <Text
             style={{
-              fontFamily: Font["poppins-semiBold"],
-              fontSize: FontSize.large,
-              maxWidth: "60%",
+              fontFamily: Font["poppins-regular"],
+              fontSize: FontSize.small,
+              maxWidth: "80%",
               textAlign: "center",
             }}
           >
-            Welcome back you've been missed!
+            Create an account so you can explore all the existing jobs
           </Text>
         </View>
         <View
@@ -86,33 +57,9 @@ const LoginScreen: React.FC = () => {
             marginVertical: Spacing * 3,
           }}
         >
-          <AppTextInput 
-            placeholder="Email" 
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <AppTextInput 
-            placeholder="Password" 
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View>
-          <Text
-            style={{
-              fontFamily: Font["poppins-semiBold"],
-              fontSize: FontSize.small,
-              color: Colors.warmOrange,
-              alignSelf: "flex-end",
-            }}
-          >
-            Forgot your password ?
-          </Text>
+          <AppTextInput placeholder="Email" />
+          <AppTextInput placeholder="Password" />
+          <AppTextInput placeholder="Confirm Password" />
         </View>
 
         <TouchableOpacity
@@ -129,31 +76,20 @@ const LoginScreen: React.FC = () => {
             shadowOpacity: 0.3,
             shadowRadius: Spacing,
           }}
-          onPress={handleLogin}
-          disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text
-              style={{
-                fontFamily: Font["poppins-bold"],
-                color: Colors.onPrimary,
-                textAlign: "center",
-                fontSize: FontSize.large,
-              }}
-            >
-              Sign in
-            </Text>
-          )}
-        </TouchableOpacity>
-        {status === 'failed' && (
-          <Text style={styles.error}>
-            Wrong email or password
+          <Text
+            style={{
+              fontFamily: Font["poppins-bold"],
+              color: Colors.onPrimary,
+              textAlign: "center",
+              fontSize: FontSize.large,
+            }}
+          >
+            Sign up
           </Text>
-        )}
+        </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => router.replace("/RegisterScreen")}
+          onPress={() => router.replace("/LoginScreen")}
           style={{
             padding: Spacing,
           }}
@@ -166,7 +102,7 @@ const LoginScreen: React.FC = () => {
               fontSize: FontSize.small,
             }}
           >
-            Create new account
+            Already have an account
           </Text>
         </TouchableOpacity>
 
@@ -242,12 +178,4 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-export default LoginScreen;
-
-const styles = StyleSheet.create({
-  error: {
-    color: 'red',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-});
+export default RegisterScreen;

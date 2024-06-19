@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     width: '100%', 
     height: 150, 
     resizeMode: 'contain', 
-    marginBottom: 20, 
+    marginBottom: 10, 
     borderRadius: 10,
   },
   iconGroupContainer: {
@@ -152,10 +152,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconImage: {
-    width: 48,
-    height: 48,
+    width: 70,
+    height: 70,
     resizeMode: 'contain',
     marginBottom: 5,
+    borderWidth: 1, 
+    borderColor: '#ccc', 
+    borderRadius: 15,
   },
   iconText: {
     fontSize: 12,

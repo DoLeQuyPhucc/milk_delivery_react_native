@@ -14,7 +14,7 @@ const AuthLoadingScreen: React.FC = () => {
         if (token) {
           router.replace('/(tabs)');
         } else {
-          router.replace('/LoginScreen');
+          router.replace('/WelcomeScreen');
         }
       } catch (error) {
         console.error('Error checking token:', error);

@@ -10,14 +10,14 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import AuthLoadingScreen from './AuthLoadingScreen';
 
+import fonts from '@/config/fonts';
+
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [fontsLoaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const [fontsLoaded] = useFonts(fonts);
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
@@ -51,8 +51,10 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AuthLoadingScreen />
         <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="WelcomeScreen" options={{ headerShown: false }} />
           <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="RegisterScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" options={{ headerShown: true }} />
           <Stack.Screen name="+not-found" options={{ headerShown: false }} />
         </Stack>

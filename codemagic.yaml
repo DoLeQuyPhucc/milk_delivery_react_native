@@ -1,0 +1,40 @@
+workflows:
+  react-native-ios:
+    name: simple-ios-todos
+    max_build_duration: 120
+    instance_type: mac_mini
+    environment:
+      vars:
+        XCODE_WORKSPACE: "YOUR_WORKSPACE_NAME.xcworkspace"
+        XCODE_SCHEME: "YOUR_SCHEME_NAME"
+        APPLE_ID: Encrypted(...)
+        APP_SPECIFIC_PASSWORD: Encrypted(...)
+        APP_STORE_CONNECT_ISSUER_ID: Encrypted(...)
+        APP_STORE_CONNECT_KEY_IDENTIFIER: Encrypted(...)
+        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(...)
+        CERTIFICATE_PRIVATE_KEY: Encrypted(...)
+        BUNDLE_ID: "YOUR_BUNDLE_ID_HERE"
+        APP_STORE_APP_ID: 1555555551
+      node: latest
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+        - tag
+        - pull_request
+      branch_patterns:
+        - pattern: develop
+          include: true
+          source: true
+    scripts:
+      - name: Install npm dependencies
+        script: npm install
+      - name: Install CocoaPods dependencies
+        script: cd ios && pod install
+      - name: Set up keychain to be used for codesigning using Codemagic CLI 'keychain' command
+        script: keychain initialize
+      - name:
+        script: |
+          # For information about Codemagic CLI commands visit: https://github.com/codemagic-ci-cd/cli-tools/blob/master/docs/app-store-connect/README.md
+          # For details about the --type parameter below - https://github.com/codemagic-ci-cd/cli-tools/blob/master/docs/app-store-connect/fetch-signing-files.md#--typeios_app_adhoc--ios_app_development--ios_app_inhouse--ios_app_store--mac_app_development--mac_app_direct--mac_app_store--mac_catalyst_app_development--mac_catalyst_app_direct--mac_catalyst_app_store--tvos_app_adhoc--tvos_app_development--tvos_app_inhouse--tvos_ap

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, Modal, ActivityIndicator } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/redux/store/store';
@@ -8,6 +8,7 @@ import { GestureHandlerRootView, TouchableOpacity, Swipeable } from 'react-nativ
 import { clearCart, updateCartQuantity, removeFromCart } from '@/redux/slices/cartSlice';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import Colors from '@/constants/Colors';
 
 const CartScreen = () => {
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -85,6 +86,12 @@ const CartScreen = () => {
     }, 1000);
   };
 
+  const calculateTotalPrice = () => {
+    return cartItems
+      .filter((item) => selectedItems.includes(item.id))
+      .reduce((total, item) => total + item.price * item.quantity, 0);
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -116,7 +123,8 @@ const CartScreen = () => {
                 />
                 <Image source={{ uri: item.productImage }} style={styles.image} />
                 <View style={styles.itemDetails}>
-                  <Text>{item.name}</Text>
+                  <Text style={styles.productName}>{item.name}</Text>
+                  <Text style={styles.priceText}>Giá: {item.price}đ</Text>
                   <View style={styles.quantityContainer}>
                     <TouchableOpacity onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
                       <Icon name="remove" size={20} color="#000" />
@@ -148,7 +156,7 @@ const CartScreen = () => {
         <View style={styles.footer}>
           <View style={styles.footerLeft}>
             <Checkbox value={selectAll} onValueChange={handleSelectAll} color={selectAll ? '#4630EB' : undefined} style={styles.checkbox} />
-            <Text style={styles.selectAllText}>Tất cả</Text>
+            <Text>Tất cả</Text>
           </View>
           {editMode ? (
             <View style={styles.editModeButtons}>
@@ -160,11 +168,12 @@ const CartScreen = () => {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.orderButton} onPress={handleOrder}>
-              <Text style={styles.orderButtonText}>
-                Mua hàng ({selectedItems.length})
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.orderContainer}>
+              <Text style={styles.totalPriceText}>Tổng: {calculateTotalPrice()}đ</Text>
+              <TouchableOpacity style={styles.orderButton} onPress={handleOrder}>
+                <Text style={styles.orderButtonText}>Mua hàng ({selectedItems.length})</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       )}
@@ -245,9 +254,19 @@ const styles = StyleSheet.create({
   checkbox: {
     marginRight: 10,
   },
+  productName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  priceText: {
+    color: 'red',
+    fontWeight: 'bold',
+    marginTop: 5,
+  },
   image: {
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
+    borderWidth: 1,
     marginRight: 10,
   },
   itemDetails: {
@@ -256,7 +275,7 @@ const styles = StyleSheet.create({
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 5,
   },
   quantityText: {
     marginHorizontal: 10,
@@ -268,13 +287,20 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#ccc',
+    marginBottom: 20
   },
   footerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  selectAllText: {
-    marginLeft: 10,
+  orderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  totalPriceText: {
+    marginRight: 10,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   orderButton: {
     backgroundColor: '#FF6F61',

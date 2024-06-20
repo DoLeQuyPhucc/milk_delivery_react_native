@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '@/redux/slices/productSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 type RootStackParamList = {
@@ -17,6 +18,7 @@ type RootStackParamList = {
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen: React.FC = () => {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { products, status, error } = useSelector((state: RootState) => state.products);
@@ -36,10 +38,10 @@ const HomeScreen: React.FC = () => {
           <View style={styles.searchContainer}>
             <TextInput style={styles.searchInput} placeholder="Search..." />
             <View style={styles.iconContainer}>
-              <TouchableOpacity style={styles.iconButton}>
-                <Icon name="qr-code" size={24} color="#000" />
+              <TouchableOpacity style={styles.iconButton} onPress={() => router.push('CartScreen')}>
+                <Icon name="shopping-cart" size={24} color="#000" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
+              <TouchableOpacity style={styles.iconButton} >
                 <Icon name="notifications" size={24} color="#000" />
               </TouchableOpacity>
             </View>

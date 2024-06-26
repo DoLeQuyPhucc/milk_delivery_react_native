@@ -59,6 +59,8 @@ export default function RootLayout() {
           <Stack.Screen name="RegisterScreen" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" options={{ headerShown: false }} />
+          <Stack.Screen name="PackageDetail" options={{ headerShown: false }} />
+          <Stack.Screen name="OrderFormScreen" options={{ headerShown: false }} />
           <Stack.Screen name="CartScreen" options={{ headerShown: false }} />     
           <Stack.Screen name="+not-found" options={{ headerShown: false }} />
         </Stack>

@@ -26,7 +26,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="order"
         options={{
-          title: 'Order',
+          title: 'My Package',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'cart' : 'cart-outline'} color={color} />
           ),

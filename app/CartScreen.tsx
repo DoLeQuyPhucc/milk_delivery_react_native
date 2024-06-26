@@ -8,7 +8,6 @@ import { GestureHandlerRootView, TouchableOpacity, Swipeable } from 'react-nativ
 import { clearCart, updateCartQuantity, removeFromCart } from '@/redux/slices/cartSlice';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import Colors from '@/constants/Colors';
 
 const CartScreen = () => {
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -170,7 +169,7 @@ const CartScreen = () => {
           ) : (
             <View style={styles.orderContainer}>
               <Text style={styles.totalPriceText}>Tổng: {calculateTotalPrice()}đ</Text>
-              <TouchableOpacity style={styles.orderButton} onPress={handleOrder}>
+              <TouchableOpacity style={styles.orderButton} onPress={() => router.push('OrderFormScreen')}>
                 <Text style={styles.orderButtonText}>Mua hàng ({selectedItems.length})</Text>
               </TouchableOpacity>
             </View>

@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store/store';
-import DatePicker from 'react-native-date-picker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useRouter } from 'expo-router';
 import { callApi } from '@/hooks/useAxios';
 import { Header } from 'react-native-elements';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as WebBrowser from 'expo-web-browser';
 
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
@@ -17,17 +19,118 @@ const OrderFormScreen: React.FC = () => {
   const [country, setCountry] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('VNPay');
   const [numberOfShipment, setNumberOfShipment] = useState<number>(3);
-  const [deliveryDays, setDeliveryDays] = useState<string[]>(['2', '4', '6']);
+  const [deliveryCombo, setDeliveryCombo] = useState<string>('2-4-6');
   const [deliveredAt, setDeliveredAt] = useState<Date>(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false);
+  const [startDeliveryDate, setStartDeliveryDate] = useState<string>('');
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
+  const getUserId = async () => {
+    try {
+      const id = await AsyncStorage.getItem('id');
+      return id;
+    } catch (error) {
+      console.error('Error getting user ID:', error);
+    }
+  };
+
+  const calculateNextDeliveryDate = useCallback((currentDate: Date, combo: string) => {
+    let nextDeliveryDate = new Date(currentDate);
+    let targetDay: number;
+  
+    if (combo === '2-4-6') {
+      targetDay = 1; // Monday
+    } else if (combo === '3-5-7') {
+      targetDay = 2; // Tuesday
+    } else {
+      return nextDeliveryDate;
+    }
+  
+    // If today is already the target day, use it; otherwise, find the next target day
+    if (nextDeliveryDate.getDay() !== targetDay) {
+      nextDeliveryDate.setDate(nextDeliveryDate.getDate() + ((7 + targetDay - nextDeliveryDate.getDay()) % 7));
+    }
+  
+    // If the calculated date is in the past, move to the next week's target day
+    if (nextDeliveryDate <= currentDate) {
+      nextDeliveryDate.setDate(nextDeliveryDate.getDate() + 7);
+    }
+  
+    return nextDeliveryDate;
+  }, []);
+  
+  useEffect(() => {
+    const nextDeliveryDate = calculateNextDeliveryDate(new Date(), deliveryCombo);
+    setDeliveredAt(nextDeliveryDate);
+    setStartDeliveryDate(nextDeliveryDate.toLocaleDateString('vi-VN'));
+  }, [deliveryCombo, calculateNextDeliveryDate]);
+  
+  const handleConfirm = (date: Date) => {
+    setDatePickerVisibility(false);
+
+    const selectedDay = date.getDay();
+    const validDays = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
+
+    if (!validDays.includes(selectedDay)) {
+      Alert.alert('Error', 'Selected delivery date does not match the delivery days. Please choose a valid date.');
+      return;
+    }
+
+    setDeliveredAt(date);
+    setStartDeliveryDate(date.toLocaleDateString('vi-VN'));
+  };
+
+  const handleVNPayPayment = async (orderData: any) => {
+    if (!orderData.shippingAddress.fullName) {
+      Alert.alert('Error', 'Full Name is required');
+      return;
+    }
+    if (!orderData.shippingAddress.phone) {
+      Alert.alert('Error', 'Phone is required');
+      return;
+    }
+    if (!orderData.shippingAddress.address) {
+      Alert.alert('Error', 'Address is required');
+      return;
+    }
+    if (!orderData.shippingAddress.city) {
+      Alert.alert('Error', 'City is required');
+      return;
+    }
+    if (!orderData.shippingAddress.country) {
+      Alert.alert('Error', 'Country is required');
+      return;
+    }
+
+    try {
+      const response = await callApi('POST', '/api/payments/create_payment_url', {
+        ...orderData,
+        amount: packageDetail?.totalPrice,
+      });
+
+      const vnpUrl = response.vnpUrl;
+      console.log("vnpUrl: ", vnpUrl);
+      
+
+
+      if (vnpUrl) {
+        await WebBrowser.openBrowserAsync(vnpUrl);
+      } else {
+        Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
+    }
+  };
+
   const handleSubmit = async () => {
+    const userId = await getUserId();
+
     if (!packageDetail) return;
 
-    const deliveryDayNums = deliveryDays.map(day => parseInt(day));
+    const deliveryDayNums = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
     const deliveryDay = deliveredAt.getDay();
 
     if (!deliveryDayNums.includes(deliveryDay)) {
@@ -42,31 +145,27 @@ const OrderFormScreen: React.FC = () => {
         phone,
         address,
         city,
-        country
+        country,
       },
       paymentMethod,
-      userID: '6663ce77a6116a98ba9b669c', // Assuming a static userID for now
-      isPaid: true,
-      paidAt: new Date().toISOString(),
+      userID: userId,
+      isPaid: paymentMethod === 'VNPay',
+      paidAt: paymentMethod === 'VNPay' ? new Date().toISOString() : null,
       deliveredAt: deliveredAt.toISOString(),
       numberOfShipment,
     };
 
-    try {
-      await callApi('POST', '/api/orders', orderData);
-      Alert.alert('Success', 'Order created successfully!');
-      router.push('/OrderSuccessScreen');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create order. Please try again.');
+    if (paymentMethod === 'VNPay') {
+      await handleVNPayPayment(orderData);
+    } else {
+      try {
+        await callApi('POST', '/api/orders', orderData);
+        Alert.alert('Success', 'Order created successfully!');
+        router.push('/OrderSuccessScreen');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to create order. Please try again.');
+      }
     }
-  };
-
-  const toggleDeliveryDay = (day: string) => {
-    setDeliveryDays(prevDays =>
-      prevDays.includes(day)
-        ? prevDays.filter(d => d !== day)
-        : [...prevDays, day]
-    );
   };
 
   return (
@@ -78,7 +177,7 @@ const OrderFormScreen: React.FC = () => {
             color: 'black',
             onPress: () => router.back(),
           }}
-          containerStyle={{ backgroundColor: '#f2f2f2' }}
+          containerStyle={{ backgroundColor: '#fff' }}
         />
         <Text style={styles.title}>Order Form</Text>
         <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
@@ -86,7 +185,16 @@ const OrderFormScreen: React.FC = () => {
         <TextInput style={styles.input} placeholder="Address" value={address} onChangeText={setAddress} />
         <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
         <TextInput style={styles.input} placeholder="Country" value={country} onChangeText={setCountry} />
-        <TextInput style={styles.input} placeholder="Payment Method" value={paymentMethod} onChangeText={setPaymentMethod} />
+
+        <Text style={styles.label}>Payment Method</Text>
+        <View style={styles.paymentOptions}>
+          <TouchableOpacity style={[styles.optionButton, paymentMethod === 'VNPay' && styles.selectedOption]} onPress={() => setPaymentMethod('VNPay')}>
+            <Text style={styles.optionText}>VNPay</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.optionButton, paymentMethod === 'Cash' && styles.selectedOption]} onPress={() => setPaymentMethod('Cash')}>
+            <Text style={styles.optionText}>Cash</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.label}>Number of Shipments</Text>
         <View style={styles.shipmentOptions}>
@@ -101,52 +209,31 @@ const OrderFormScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>Delivery Days</Text>
-        <View style={styles.deliveryDaysOptions}>
-          <TouchableOpacity style={[styles.dayButton, deliveryDays.includes('2') && styles.selectedDay]} onPress={() => toggleDeliveryDay('2')}>
-            <Text style={styles.dayText}>2</Text>
+        <Text style={styles.label}>Delivery Combo</Text>
+        <View style={styles.deliveryComboOptions}>
+          <TouchableOpacity style={[styles.comboButton, deliveryCombo === '2-4-6' && styles.selectedCombo]} onPress={() => setDeliveryCombo('2-4-6')}>
+            <Text style={styles.comboText}>2-4-6</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.dayButton, deliveryDays.includes('4') && styles.selectedDay]} onPress={() => toggleDeliveryDay('4')}>
-            <Text style={styles.dayText}>4</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.dayButton, deliveryDays.includes('6') && styles.selectedDay]} onPress={() => toggleDeliveryDay('6')}>
-            <Text style={styles.dayText}>6</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.dayButton, deliveryDays.includes('3') && styles.selectedDay]} onPress={() => toggleDeliveryDay('3')}>
-            <Text style={styles.dayText}>3</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.dayButton, deliveryDays.includes('5') && styles.selectedDay]} onPress={() => toggleDeliveryDay('5')}>
-            <Text style={styles.dayText}>5</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.dayButton, deliveryDays.includes('7') && styles.selectedDay]} onPress={() => toggleDeliveryDay('7')}>
-            <Text style={styles.dayText}>7</Text>
+          <TouchableOpacity style={[styles.comboButton, deliveryCombo === '3-5-7' && styles.selectedCombo]} onPress={() => setDeliveryCombo('3-5-7')}>
+            <Text style={styles.comboText}>3-5-7</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>Delivered At</Text>
+        <Text style={styles.label}>Start Delivery Date</Text>
         <TouchableOpacity onPress={() => setDatePickerVisibility(true)}>
-          <TextInput
-            style={styles.input}
-            placeholder="Select date"
-            value={deliveredAt.toISOString().split('T')[0]}
-            editable={false}
-          />
+          <TextInput style={styles.input} placeholder="Delivery Date" value={startDeliveryDate} editable={false} />
         </TouchableOpacity>
-        <DatePicker
-          modal
-          open={isDatePickerVisible}
-          date={deliveredAt}
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
           mode="date"
-          minimumDate={new Date()}
-          onConfirm={(date) => {
-            setDatePickerVisibility(false);
-            setDeliveredAt(date);
-          }}
+          onConfirm={handleConfirm}
           onCancel={() => setDatePickerVisibility(false)}
         />
 
+        <Text style={styles.label}>Price: {packageDetail?.totalPrice}</Text>
+
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit Order</Text>
+          <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
       </ScrollView>
     </GestureHandlerRootView>
@@ -159,7 +246,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   contentContainer: {
-    padding: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 16
   },
   title: {
     fontSize: 24,
@@ -167,68 +256,73 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    borderWidth: 1,
+    height: 40,
     borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+    borderRadius: 5,
   },
   label: {
     fontSize: 16,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  shipmentOptions: {
+  paymentOptions: {
     flexDirection: 'row',
     marginBottom: 16,
   },
   optionButton: {
     flex: 1,
-    padding: 10,
-    margin: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    alignItems: 'center',
-  },
-  selectedOption: {
-    backgroundColor: '#FF6F61',
-  },
-  optionText: {
-    color: '#fff',
-  },
-  deliveryDaysOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  dayButton: {
-    width: 40,
     height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ccc',
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 4,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginHorizontal: 4,
   },
-  selectedDay: {
-    backgroundColor: '#FF6F61',
+  selectedOption: {
+    backgroundColor: '#ccc',
   },
-  dayText: {
-    color: '#fff',
+  optionText: {
+    fontSize: 16,
+  },
+  shipmentOptions: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  deliveryComboOptions: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  comboButton: {
+    flex: 1,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginHorizontal: 4,
+  },
+  selectedCombo: {
+    backgroundColor: '#ccc',
+  },
+  comboText: {
+    fontSize: 16,
   },
   submitButton: {
-    backgroundColor: '#FF6F61',
-    padding: 16,
-    borderRadius: 8,
+    height: 50,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
+    backgroundColor: 'orange',
+    borderRadius: 5,
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
 

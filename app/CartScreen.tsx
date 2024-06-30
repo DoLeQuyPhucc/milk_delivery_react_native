@@ -124,15 +124,6 @@ const CartScreen = () => {
                 <View style={styles.itemDetails}>
                   <Text style={styles.productName}>{item.name}</Text>
                   <Text style={styles.priceText}>Giá: {item.price}đ</Text>
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
-                      <Icon name="remove" size={20} color="#000" />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}>
-                      <Icon name="add" size={20} color="#000" />
-                    </TouchableOpacity>
-                  </View>
                 </View>
               </View>
             </Swipeable>

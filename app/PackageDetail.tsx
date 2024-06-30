@@ -116,27 +116,15 @@ const PackageDetail: React.FC = () => {
           </>
         )}
 
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity style={styles.quantityButton} onPress={handleDecrease}>
-            <Icon name="remove" size={20} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.quantityText}>{quantity}</Text>
-          <TouchableOpacity style={styles.quantityButton} onPress={handleIncrease}>
-            <Icon name="add" size={20} color="#000" />
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.cartIconContainer, styles.iconButton, { backgroundColor: quantity === 0 ? '#ccc' : 'green' }]}
-            disabled={quantity === 0}
+            style={[styles.cartIconContainer, styles.iconButton, { backgroundColor: 'green' }]}
             onPress={handleAddToCart}
           >
             <Icon name="shopping-cart" size={24} color="#FFF" />
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.orderButton, { backgroundColor: quantity === 0 ? '#ccc' : '#FF6F61' }]}
-            disabled={quantity === 0}
+            style={[styles.orderButton, { backgroundColor: '#FF6F61' }]}
             onPress={() => router.push('OrderFormScreen')}
           >
             <Text style={styles.orderButtonText}>Đặt hàng</Text>
@@ -239,6 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 10
   },
   cartIconContainer: {
     justifyContent: 'center',

@@ -55,7 +55,6 @@ const cartSlice = createSlice({
       Toast.show({
         type: "success",
         text1: `Thêm ${newItem.name} thành công`,
-        text2: `Số lượng: ${newItem.quantity}`,
       });
     },
     removeFromCart(state, action: PayloadAction<string>) {

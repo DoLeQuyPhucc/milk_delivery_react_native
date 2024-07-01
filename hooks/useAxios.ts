@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 // Create Axios instance with baseURL from .env
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "http://10.0.2.2:8000",
+  baseURL: "https://milk-delivery-api.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },

@@ -32,7 +32,7 @@ const LoginScreen: React.FC = () => {
     try {
       const userData = await dispatch(loginUser({ email, password })).unwrap();
       await storeToken(userData.token);
-      await storeId(userData.user._id);
+      // await storeId(userData.user._id);
       router.replace('/(tabs)');
     } catch (err) {
       console.error('Login failed:', err);
@@ -49,13 +49,13 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const storeId = async (id: string) => {
-    try {
-      await AsyncStorage.setItem('id', id);
-    } catch (error) {
-      console.error('Error storing info:', error);
-    }
-  }
+  // const storeId = async (id: string) => {
+  //   try {
+  //     await AsyncStorage.setItem('id', id);
+  //   } catch (error) {
+  //     console.error('Error storing info:', error);
+  //   }
+  // }
 
   return (
     <SafeAreaView>

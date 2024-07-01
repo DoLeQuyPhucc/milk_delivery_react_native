@@ -9,6 +9,8 @@ import { Header } from 'react-native-elements';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
+import * as Location from 'expo-location';
+import StepIndicator from 'react-native-step-indicator';
 
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
@@ -18,55 +20,53 @@ const OrderFormScreen: React.FC = () => {
   const [city, setCity] = useState<string>('');
   const [country, setCountry] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('VNPay');
-  const [numberOfShipment, setNumberOfShipment] = useState<number>(3);
+  const [numberOfShipment, setNumberOfShipment] = useState<string>('');
   const [deliveryCombo, setDeliveryCombo] = useState<string>('2-4-6');
   const [deliveredAt, setDeliveredAt] = useState<Date>(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false);
   const [startDeliveryDate, setStartDeliveryDate] = useState<string>('');
+  const [locationLoading, setLocationLoading] = useState<boolean>(false);
+  const [currentStep, setCurrentStep] = useState<number>(0);
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const getUserId = async () => {
+  // const getUserId = async () => {
+  //   try {
+  //     const id = await AsyncStorage.getItem('id');
+  //     return id;
+  //   } catch (error) {
+  //     console.error('Error getting user ID:', error);
+  //   }
+  // };
+
+  const getCurrentLocation = async () => {
+    setLocationLoading(true);
     try {
-      const id = await AsyncStorage.getItem('id');
-      return id;
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
+        setLocationLoading(false);
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      let response = await Location.reverseGeocodeAsync({ latitude, longitude });
+      if (response.length > 0) {
+        let { city, region, country } = response[0];
+        setCity(city || '');
+        setCountry(country || '');
+        setAddress(`${city}, ${region}`);
+      }
     } catch (error) {
-      console.error('Error getting user ID:', error);
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Failed to get location. Please try again.');
     }
+    setLocationLoading(false);
   };
 
-  const calculateNextDeliveryDate = useCallback((currentDate: Date, combo: string) => {
-    let nextDeliveryDate = new Date(currentDate);
-    let targetDay: number;
-  
-    if (combo === '2-4-6') {
-      targetDay = 1; // Monday
-    } else if (combo === '3-5-7') {
-      targetDay = 2; // Tuesday
-    } else {
-      return nextDeliveryDate;
-    }
-  
-    // If today is already the target day, use it; otherwise, find the next target day
-    if (nextDeliveryDate.getDay() !== targetDay) {
-      nextDeliveryDate.setDate(nextDeliveryDate.getDate() + ((7 + targetDay - nextDeliveryDate.getDay()) % 7));
-    }
-  
-    // If the calculated date is in the past, move to the next week's target day
-    if (nextDeliveryDate <= currentDate) {
-      nextDeliveryDate.setDate(nextDeliveryDate.getDate() + 7);
-    }
-  
-    return nextDeliveryDate;
-  }, []);
-  
-  useEffect(() => {
-    const nextDeliveryDate = calculateNextDeliveryDate(new Date(), deliveryCombo);
-    setDeliveredAt(nextDeliveryDate);
-    setStartDeliveryDate(nextDeliveryDate.toLocaleDateString('vi-VN'));
-  }, [deliveryCombo, calculateNextDeliveryDate]);
-  
   const handleConfirm = (date: Date) => {
     setDatePickerVisibility(false);
 
@@ -112,11 +112,19 @@ const OrderFormScreen: React.FC = () => {
 
       const vnpUrl = response.vnpUrl;
       console.log("vnpUrl: ", vnpUrl);
-      
-
 
       if (vnpUrl) {
         await WebBrowser.openBrowserAsync(vnpUrl);
+
+        const returnResponse = await callApi('GET', '/api/payments/vnpay_return');
+        if (returnResponse) {
+          router.push({
+            pathname: '/OrderSuccessScreen',
+            params: { vnpayData: JSON.stringify(returnResponse) }
+          });
+        } else {
+          Alert.alert('Error', 'Failed to get VNPay return data. Please try again.');
+        }
       } else {
         Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
       }
@@ -126,18 +134,24 @@ const OrderFormScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    const userId = await getUserId();
-
+    // const userId = await getUserId();
+  
     if (!packageDetail) return;
-
+  
     const deliveryDayNums = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
     const deliveryDay = deliveredAt.getDay();
-
+  
     if (!deliveryDayNums.includes(deliveryDay)) {
       Alert.alert('Error', 'Selected delivery date does not match the delivery days.');
       return;
     }
-
+  
+    const numShipment = parseInt(numberOfShipment);
+    if (isNaN(numShipment)) {
+      Alert.alert('Error', 'Number of Shipments must be a valid number.');
+      return;
+    }
+  
     const orderData = {
       packageID: packageDetail._id,
       shippingAddress: {
@@ -148,96 +162,202 @@ const OrderFormScreen: React.FC = () => {
         country,
       },
       paymentMethod,
-      userID: userId,
+      userID: "6663ce77a6116a98ba9b669a",
       isPaid: paymentMethod === 'VNPay',
       paidAt: paymentMethod === 'VNPay' ? new Date().toISOString() : null,
       deliveredAt: deliveredAt.toISOString(),
-      numberOfShipment,
+      numberOfShipment: numShipment,
     };
-
-    if (paymentMethod === 'VNPay') {
-      await handleVNPayPayment(orderData);
-    } else {
-      try {
-        await callApi('POST', '/api/orders', orderData);
+  
+    console.log('orderData:', orderData);
+  
+    try {
+      if (paymentMethod === 'VNPay') {
+        await handleVNPayPayment(orderData);
+      } else {
+        const response = await callApi('POST', '/api/orders', orderData);
+        console.log('order response:', response);
         Alert.alert('Success', 'Order created successfully!');
-        router.push('/OrderSuccessScreen');
-      } catch (error) {
-        Alert.alert('Error', 'Failed to create order. Please try again.');
+        router.push({
+          pathname: '/OrderSuccessScreen',
+          params: { orderData: JSON.stringify(response) }
+        });
       }
+    } catch (error) {
+      console.error('Error handling submission:', error);
+      Alert.alert('Error', 'Failed to create order. Please try again.');
+    }
+  };
+  
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Full Name:</Text>
+            <TextInput
+              style={styles.input}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Enter your full name"
+            />
+            <Text style={styles.label}>Phone:</Text>
+            <TextInput
+              style={styles.input}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Enter your phone number"
+              keyboardType="phone-pad"
+            />
+            <Text style={styles.label}>Address:</Text>
+            <TextInput
+              style={styles.input}
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Enter your address"
+            />
+            <Text style={styles.label}>City:</Text>
+            <TextInput
+              style={styles.input}
+              value={city}
+              onChangeText={setCity}
+              placeholder="Enter your city"
+            />
+            <Text style={styles.label}>Country:</Text>
+            <TextInput
+              style={styles.input}
+              value={country}
+              onChangeText={setCountry}
+              placeholder="Enter your country"
+            />
+            <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
+              <Text style={styles.locationButtonText}>
+                {locationLoading ? 'Locating...' : 'Use Current Location'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        );
+      case 1:
+        return (
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Number of Shipments:</Text>
+            <TextInput
+              style={styles.input}
+              value={numberOfShipment}
+              onChangeText={setNumberOfShipment}
+              placeholder="Enter number of shipments"
+              keyboardType="numeric"
+            />
+            <Text style={styles.label}>Choose Combo Days:</Text>
+            <View style={styles.comboContainer}>
+              <TouchableOpacity
+                style={[styles.comboButton, deliveryCombo === '2-4-6' && styles.selectedButton]}
+                onPress={() => setDeliveryCombo('2-4-6')}
+              >
+                <Text style={[styles.comboText, deliveryCombo === '2-4-6' && styles.selectedText]}>2-4-6</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.comboButton, deliveryCombo === '3-5-7' && styles.selectedButton]}
+                onPress={() => setDeliveryCombo('3-5-7')}
+              >
+                <Text style={[styles.comboText, deliveryCombo === '3-5-7' && styles.selectedText]}>3-5-7</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.label}>Choose Payment Method:</Text>
+            <View style={styles.paymentContainer}>
+              <TouchableOpacity
+                style={[styles.paymentButton, paymentMethod === 'VNPay' && styles.selectedButton]}
+                onPress={() => setPaymentMethod('VNPay')}
+              >
+                <Text style={[styles.paymentText, paymentMethod === 'VNPay' && styles.selectedText]}>VNPay</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.paymentButton, paymentMethod === 'Cash' && styles.selectedButton]}
+                onPress={() => setPaymentMethod('Cash')}
+              >
+                <Text style={[styles.paymentText, paymentMethod === 'Cash' && styles.selectedText]}>Cash</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.label}>Select Start Delivery Date:</Text>
+            <TouchableOpacity onPress={() => setDatePickerVisibility(true)}>
+              <Text style={styles.datePicker}>{startDeliveryDate || 'Choose a start date'}</Text>
+            </TouchableOpacity>
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode="date"
+              onConfirm={handleConfirm}
+              onCancel={() => setDatePickerVisibility(false)}
+              minimumDate={new Date()}
+            />
+          </View>
+        );
+      default:
+        return null;
     }
   };
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <Header
-          leftComponent={{
-            icon: 'arrow-back',
-            color: 'black',
-            onPress: () => router.back(),
-          }}
-          containerStyle={{ backgroundColor: '#fff' }}
+      <Header
+        leftComponent={{
+          icon: 'arrow-back',
+          color: '#fff',
+          onPress: () => setCurrentStep((prev) => (prev > 0 ? prev - 1 : prev)),
+        }}
+        centerComponent={{ text: 'Order Form', style: { color: '#fff', fontSize: 20 } }}
+        containerStyle={styles.header}
+      />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <StepIndicator
+          stepCount={2}
+          customStyles={stepIndicatorStyles}
+          currentPosition={currentStep}
+          labels={['Delivery Address', 'Delivery Details']}
         />
-        <Text style={styles.title}>Order Form</Text>
-        <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
-        <TextInput style={styles.input} placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        <TextInput style={styles.input} placeholder="Address" value={address} onChangeText={setAddress} />
-        <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
-        <TextInput style={styles.input} placeholder="Country" value={country} onChangeText={setCountry} />
-
-        <Text style={styles.label}>Payment Method</Text>
-        <View style={styles.paymentOptions}>
-          <TouchableOpacity style={[styles.optionButton, paymentMethod === 'VNPay' && styles.selectedOption]} onPress={() => setPaymentMethod('VNPay')}>
-            <Text style={styles.optionText}>VNPay</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.optionButton, paymentMethod === 'Cash' && styles.selectedOption]} onPress={() => setPaymentMethod('Cash')}>
-            <Text style={styles.optionText}>Cash</Text>
-          </TouchableOpacity>
+        {renderStepContent()}
+        <View style={styles.buttonContainer}>
+          {currentStep > 0 && (
+            <TouchableOpacity style={styles.prevButton} onPress={() => setCurrentStep((prev) => prev - 1)}>
+              <Text style={styles.buttonText}>Back</Text>
+            </TouchableOpacity>
+          )}
+          {currentStep < 1 ? (
+            <TouchableOpacity style={styles.nextButton} onPress={() => setCurrentStep((prev) => prev + 1)}>
+              <Text style={styles.buttonText}>Next</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+          )}
         </View>
-
-        <Text style={styles.label}>Number of Shipments</Text>
-        <View style={styles.shipmentOptions}>
-          <TouchableOpacity style={[styles.optionButton, numberOfShipment === 3 && styles.selectedOption]} onPress={() => setNumberOfShipment(3)}>
-            <Text style={styles.optionText}>1 tuần</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.optionButton, numberOfShipment === 12 && styles.selectedOption]} onPress={() => setNumberOfShipment(12)}>
-            <Text style={styles.optionText}>1 tháng</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.optionButton, numberOfShipment === 24 && styles.selectedOption]} onPress={() => setNumberOfShipment(24)}>
-            <Text style={styles.optionText}>2 tháng</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>Delivery Combo</Text>
-        <View style={styles.deliveryComboOptions}>
-          <TouchableOpacity style={[styles.comboButton, deliveryCombo === '2-4-6' && styles.selectedCombo]} onPress={() => setDeliveryCombo('2-4-6')}>
-            <Text style={styles.comboText}>2-4-6</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.comboButton, deliveryCombo === '3-5-7' && styles.selectedCombo]} onPress={() => setDeliveryCombo('3-5-7')}>
-            <Text style={styles.comboText}>3-5-7</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.label}>Start Delivery Date</Text>
-        <TouchableOpacity onPress={() => setDatePickerVisibility(true)}>
-          <TextInput style={styles.input} placeholder="Delivery Date" value={startDeliveryDate} editable={false} />
-        </TouchableOpacity>
-        <DateTimePickerModal
-          isVisible={isDatePickerVisible}
-          mode="date"
-          onConfirm={handleConfirm}
-          onCancel={() => setDatePickerVisibility(false)}
-        />
-
-        <Text style={styles.label}>Price: {packageDetail?.totalPrice}</Text>
-
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit</Text>
-        </TouchableOpacity>
       </ScrollView>
     </GestureHandlerRootView>
   );
+};
+
+const stepIndicatorStyles = {
+  stepIndicatorSize: 30,
+  currentStepIndicatorSize: 40,
+  separatorStrokeWidth: 2,
+  currentStepStrokeWidth: 3,
+  stepStrokeCurrentColor: '#fe7013',
+  stepStrokeWidth: 3,
+  stepStrokeFinishedColor: '#fe7013',
+  stepStrokeUnFinishedColor: '#aaaaaa',
+  separatorFinishedColor: '#fe7013',
+  separatorUnFinishedColor: '#aaaaaa',
+  stepIndicatorFinishedColor: '#fe7013',
+  stepIndicatorUnFinishedColor: '#ffffff',
+  stepIndicatorCurrentColor: '#ffffff',
+  stepIndicatorLabelFontSize: 15,
+  currentStepIndicatorLabelFontSize: 15,
+  stepIndicatorLabelCurrentColor: '#fe7013',
+  stepIndicatorLabelFinishedColor: '#ffffff',
+  stepIndicatorLabelUnFinishedColor: '#aaaaaa',
+  labelColor: '#999999',
+  labelSize: 13,
+  currentStepLabelColor: '#fe7013'
 };
 
 const styles = StyleSheet.create({
@@ -245,84 +365,108 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  contentContainer: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingBottom: 16
+  header: {
+    backgroundColor: '#fe7013',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 16,
+  },
+  formGroup: {
     marginBottom: 16,
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
-    borderRadius: 5,
   },
   label: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  paymentOptions: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  optionButton: {
-    flex: 1,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 5,
+  input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    marginHorizontal: 4,
-  },
-  selectedOption: {
-    backgroundColor: '#ccc',
-  },
-  optionText: {
-    fontSize: 16,
-  },
-  shipmentOptions: {
-    flexDirection: 'row',
+    borderRadius: 4,
+    padding: 8,
     marginBottom: 16,
   },
-  deliveryComboOptions: {
+  locationButton: {
+    backgroundColor: '#fe7013',
+    padding: 12,
+    borderRadius: 4,
+  },
+  locationButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  comboContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     marginBottom: 16,
   },
   comboButton: {
-    flex: 1,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 5,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#ccc',
-    marginHorizontal: 4,
-  },
-  selectedCombo: {
-    backgroundColor: '#ccc',
+    borderRadius: 4,
   },
   comboText: {
     fontSize: 16,
   },
-  submitButton: {
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'orange',
-    borderRadius: 5,
+  selectedButton: {
+    backgroundColor: '#fe7013',
   },
-  submitButtonText: {
+  selectedText: {
     color: '#fff',
-    fontSize: 18,
+  },
+  paymentContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  paymentButton: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+  },
+  paymentText: {
+    fontSize: 16,
+  },
+  datePicker: {
+    fontSize: 16,
+    color: '#fe7013',
+    textAlign: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  prevButton: {
+    backgroundColor: '#fe7013',
+    padding: 12,
+    borderRadius: 4,
+    flex: 1,
+    marginRight: 8,
+  },
+  nextButton: {
+    backgroundColor: '#fe7013',
+    padding: 12,
+    borderRadius: 4,
+    flex: 1,
+  },
+  submitButton: {
+    backgroundColor: '#fe7013',
+    padding: 12,
+    borderRadius: 4,
+    flex: 1,
+  },
+  buttonText: {
+    color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

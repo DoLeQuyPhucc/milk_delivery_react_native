@@ -4,10 +4,14 @@ import React from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import useExpoNoti from '@/hooks/useExpoNoti';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { expoPushToken } = useExpoNoti();
 
+  console.log({ expoPushToken });
+  
   return (
     <Tabs
       screenOptions={{

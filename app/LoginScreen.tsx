@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/redux/slices/authSlice";
+import { setUser } from "@/redux/slices/userSlice";
 import { RootState, AppDispatch } from "@/redux/store/store";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,6 +19,7 @@ import Colors from "../constants/Colors";
 import Font from "../constants/Font";
 import { Ionicons } from "@expo/vector-icons";
 import AppTextInput from "../components/AppTextInput";
+import { callApi } from "@/hooks/useAxios";
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -32,7 +34,8 @@ const LoginScreen: React.FC = () => {
     try {
       const userData = await dispatch(loginUser({ email, password })).unwrap();
       await storeToken(userData.token);
-      // await storeId(userData.user._id);
+      const userProfile = await fetchUserProfile();
+      dispatch(setUser(userProfile));
       router.replace('/(tabs)');
     } catch (err) {
       console.error('Login failed:', err);
@@ -49,13 +52,15 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  // const storeId = async (id: string) => {
-  //   try {
-  //     await AsyncStorage.setItem('id', id);
-  //   } catch (error) {
-  //     console.error('Error storing info:', error);
-  //   }
-  // }
+  const fetchUserProfile = async () => {
+    try {
+      const data = await callApi('GET', '/api/auth/me');
+      return data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+  };
 
   return (
     <SafeAreaView>

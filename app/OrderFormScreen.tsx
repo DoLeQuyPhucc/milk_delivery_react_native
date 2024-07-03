@@ -14,6 +14,9 @@ import StepIndicator from 'react-native-step-indicator';
 
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
+  const userID = useSelector((state: RootState) => state.user._id);
+  console.log('User ID:', userID);
+  
   const [fullName, setFullName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
   const [address, setAddress] = useState<string>('');
@@ -30,15 +33,6 @@ const OrderFormScreen: React.FC = () => {
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-
-  // const getUserId = async () => {
-  //   try {
-  //     const id = await AsyncStorage.getItem('id');
-  //     return id;
-  //   } catch (error) {
-  //     console.error('Error getting user ID:', error);
-  //   }
-  // };
 
   const getCurrentLocation = async () => {
     setLocationLoading(true);
@@ -134,7 +128,6 @@ const OrderFormScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // const userId = await getUserId();
   
     if (!packageDetail) return;
   
@@ -162,7 +155,7 @@ const OrderFormScreen: React.FC = () => {
         country,
       },
       paymentMethod,
-      userID: "6663ce77a6116a98ba9b669a",
+      userID,
       isPaid: paymentMethod === 'VNPay',
       paidAt: paymentMethod === 'VNPay' ? new Date().toISOString() : null,
       deliveredAt: deliveredAt.toISOString(),

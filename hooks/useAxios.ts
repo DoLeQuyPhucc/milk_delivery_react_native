@@ -2,9 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance } from "axios";
 import { useEffect } from "react";
 
-// Create Axios instance with baseURL from .env
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "https://milk-delivery-api.onrender.com",
+  // baseURL: "https://milk-delivery-api.onrender.com",
+  baseURL: "http://10.0.2.2:8000",
   headers: {
     "Content-Type": "application/json",
   },

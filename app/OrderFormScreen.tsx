@@ -15,7 +15,6 @@ import StepIndicator from 'react-native-step-indicator';
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
   const userID = useSelector((state: RootState) => state.user._id);
-  console.log('User ID:', userID);
   
   const [fullName, setFullName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -76,59 +75,7 @@ const OrderFormScreen: React.FC = () => {
     setStartDeliveryDate(date.toLocaleDateString('vi-VN'));
   };
 
-  const handleVNPayPayment = async (orderData: any) => {
-    if (!orderData.shippingAddress.fullName) {
-      Alert.alert('Error', 'Full Name is required');
-      return;
-    }
-    if (!orderData.shippingAddress.phone) {
-      Alert.alert('Error', 'Phone is required');
-      return;
-    }
-    if (!orderData.shippingAddress.address) {
-      Alert.alert('Error', 'Address is required');
-      return;
-    }
-    if (!orderData.shippingAddress.city) {
-      Alert.alert('Error', 'City is required');
-      return;
-    }
-    if (!orderData.shippingAddress.country) {
-      Alert.alert('Error', 'Country is required');
-      return;
-    }
-
-    try {
-      const response = await callApi('POST', '/api/payments/create_payment_url', {
-        ...orderData,
-        amount: packageDetail?.totalPrice,
-      });
-
-      const vnpUrl = response.vnpUrl;
-      console.log("vnpUrl: ", vnpUrl);
-
-      if (vnpUrl) {
-        await WebBrowser.openBrowserAsync(vnpUrl);
-
-        const returnResponse = await callApi('GET', '/api/payments/vnpay_return');
-        if (returnResponse) {
-          router.push({
-            pathname: '/OrderSuccessScreen',
-            params: { vnpayData: JSON.stringify(returnResponse) }
-          });
-        } else {
-          Alert.alert('Error', 'Failed to get VNPay return data. Please try again.');
-        }
-      } else {
-        Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
-    }
-  };
-
   const handleSubmit = async () => {
-  
     if (!packageDetail) return;
   
     const deliveryDayNums = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
@@ -145,6 +92,9 @@ const OrderFormScreen: React.FC = () => {
       return;
     }
   
+    const formattedDeliveredAt = deliveredAt.toLocaleDateString('vi-VN');
+    const formattedPaidAt = paymentMethod === 'VNPay' ? new Date().toLocaleDateString('vi-VN') : null;
+  
     const orderData = {
       packageID: packageDetail._id,
       shippingAddress: {
@@ -157,8 +107,8 @@ const OrderFormScreen: React.FC = () => {
       paymentMethod,
       userID,
       isPaid: paymentMethod === 'VNPay',
-      paidAt: paymentMethod === 'VNPay' ? new Date().toISOString() : null,
-      deliveredAt: deliveredAt.toISOString(),
+      paidAt: formattedPaidAt,
+      deliveredAt: formattedDeliveredAt,
       numberOfShipment: numShipment,
     };
   
@@ -181,6 +131,58 @@ const OrderFormScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to create order. Please try again.');
     }
   };
+  
+  const handleVNPayPayment = async (orderData: any) => {
+    if (!orderData.shippingAddress.fullName) {
+      Alert.alert('Error', 'Full Name is required');
+      return;
+    }
+    if (!orderData.shippingAddress.phone) {
+      Alert.alert('Error', 'Phone is required');
+      return;
+    }
+    if (!orderData.shippingAddress.address) {
+      Alert.alert('Error', 'Address is required');
+      return;
+    }
+    if (!orderData.shippingAddress.city) {
+      Alert.alert('Error', 'City is required');
+      return;
+    }
+    if (!orderData.shippingAddress.country) {
+      Alert.alert('Error', 'Country is required');
+      return;
+    }
+  
+    try {
+      const response = await callApi('POST', '/api/payments/create_payment_url', {
+        ...orderData,
+        amount: packageDetail?.totalPrice,
+      });
+  
+      const vnpUrl = response.vnpUrl;
+      console.log("vnpUrl: ", vnpUrl);
+  
+      if (vnpUrl) {
+        await WebBrowser.openBrowserAsync(vnpUrl);
+  
+        const returnResponse = await callApi('GET', '/api/payments/vnpay_return');
+        if (returnResponse) {
+          router.push({
+            pathname: '/OrderSuccessScreen',
+            params: { vnpayData: JSON.stringify(returnResponse) }
+          });
+        } else {
+          Alert.alert('Error', 'Failed to get VNPay return data. Please try again.');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
+    }
+  };
+  
   
   const renderStepContent = () => {
     switch (currentStep) {

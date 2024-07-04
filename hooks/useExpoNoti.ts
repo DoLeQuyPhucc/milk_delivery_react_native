@@ -28,7 +28,7 @@ const useExpoNoti = () => {
     if (Platform.OS === "android") {
       Notifications.getNotificationChannelsAsync().then((value) => {
         if (value) {
-          console.log("Notification channels: ", value);
+          
         }
       });
     }
@@ -103,10 +103,7 @@ async function registerForPushNotificationsAsync(): Promise<
       console.error(e);
       token = `${e}`;
     }
-  } else {
-    Alert.alert("Must use physical device for Push Notifications");
-  }
-
+  } 
   return token;
 }
 

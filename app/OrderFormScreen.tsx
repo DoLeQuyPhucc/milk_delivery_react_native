@@ -1,69 +1,90 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableHighlight, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store/store';
+import { useRouter, useFocusEffect } from 'expo-router';
+import {
+  Appbar,
+  TextInput,
+  Button,
+  RadioButton,
+  Snackbar,
+  Title,
+  Paragraph,
+  Divider,
+  Subheading,
+  List,
+  IconButton,
+} from 'react-native-paper';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { useRouter } from 'expo-router';
-import { callApi } from '@/hooks/useAxios';
-import { Header } from 'react-native-elements';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
-import * as Location from 'expo-location';
-import StepIndicator from 'react-native-step-indicator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { callApi } from '@/hooks/useAxios';
 
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
   const userID = useSelector((state: RootState) => state.user._id);
-  
+
   const [fullName, setFullName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
   const [address, setAddress] = useState<string>('');
   const [city, setCity] = useState<string>('');
-  const [country, setCountry] = useState<string>('');
+  const [country, setCountry] = useState<string>('Vietnam');
   const [paymentMethod, setPaymentMethod] = useState<string>('VNPay');
   const [numberOfShipment, setNumberOfShipment] = useState<string>('');
   const [deliveryCombo, setDeliveryCombo] = useState<string>('2-4-6');
   const [deliveredAt, setDeliveredAt] = useState<Date>(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false);
   const [startDeliveryDate, setStartDeliveryDate] = useState<string>('');
-  const [locationLoading, setLocationLoading] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [addresses, setAddresses] = useState<any[]>([]); // State to store addresses
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const getCurrentLocation = async () => {
-    setLocationLoading(true);
+  const fetchAddresses = useCallback(async () => {
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
-        setLocationLoading(false);
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
-      let response = await Location.reverseGeocodeAsync({ latitude, longitude });
-      if (response.length > 0) {
-        let { city, region, country } = response[0];
-        setCity(city || '');
-        setCountry(country || '');
-        setAddress(`${city}, ${region}`);
+      const storedAddresses = await AsyncStorage.getItem(`addresses_${userID}`);
+      if (storedAddresses) {
+        setAddresses(JSON.parse(storedAddresses));
       }
     } catch (error) {
-      console.error('Error getting location:', error);
-      Alert.alert('Error', 'Failed to get location. Please try again.');
+      console.error('Failed to fetch addresses:', error);
     }
-    setLocationLoading(false);
+  }, [userID]);
+
+  useEffect(() => {
+    // Fetch addresses when component mounts
+    fetchAddresses();
+  }, [fetchAddresses]);
+  
+  useEffect(() => {
+    if (addresses.length > 0) {
+      handleAddressSelect(addresses[0]);
+    }
+  }, [addresses]);
+  
+  useFocusEffect(
+    useCallback(() => {
+      // Fetch addresses when the screen is focused
+      fetchAddresses();
+    }, [fetchAddresses])
+  );
+
+  const saveAddresses = async (updatedAddresses: any[]) => {
+    try {
+      await AsyncStorage.setItem(`addresses_${userID}`, JSON.stringify(updatedAddresses));
+      setAddresses(updatedAddresses);
+    } catch (error) {
+      console.error('Failed to save addresses:', error);
+    }
   };
 
   const handleConfirm = (date: Date) => {
     setDatePickerVisibility(false);
 
-    const selectedDay = date.getDay();
+    const selectedDay = date.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
     const validDays = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
 
     if (!validDays.includes(selectedDay)) {
@@ -77,24 +98,30 @@ const OrderFormScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!packageDetail) return;
-  
-    const deliveryDayNums = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
+
+    if (!fullName || !phone || !address || !city || !country || !numberOfShipment || !startDeliveryDate) {
+      setSnackbarMessage('Please fill in all fields.');
+      setSnackbarVisible(true);
+      return;
+    }
+
+    const deliveryDayNums = deliveryCombo === '2-4-6' ? [2, 4, 6] : [3, 5, 7];
     const deliveryDay = deliveredAt.getDay();
-  
+
     if (!deliveryDayNums.includes(deliveryDay)) {
       Alert.alert('Error', 'Selected delivery date does not match the delivery days.');
       return;
     }
-  
+
     const numShipment = parseInt(numberOfShipment);
     if (isNaN(numShipment)) {
       Alert.alert('Error', 'Number of Shipments must be a valid number.');
       return;
     }
-  
+
     const formattedDeliveredAt = deliveredAt.toLocaleDateString('vi-VN');
     const formattedPaidAt = paymentMethod === 'VNPay' ? new Date().toLocaleDateString('vi-VN') : null;
-  
+
     const orderData = {
       packageID: packageDetail._id,
       shippingAddress: {
@@ -111,65 +138,40 @@ const OrderFormScreen: React.FC = () => {
       deliveredAt: formattedDeliveredAt,
       numberOfShipment: numShipment,
     };
-  
-    console.log('orderData:', orderData);
-  
+
+    console.log('Order data:', orderData);
+    
     try {
       if (paymentMethod === 'VNPay') {
         await handleVNPayPayment(orderData);
       } else {
         const response = await callApi('POST', '/api/orders', orderData);
-        console.log('order response:', response);
         Alert.alert('Success', 'Order created successfully!');
         router.push({
-          pathname: '/OrderSuccessScreen',
+          pathname: '/OrderResultScreen',
           params: { orderData: JSON.stringify(response) }
         });
       }
     } catch (error) {
-      console.error('Error handling submission:', error);
       Alert.alert('Error', 'Failed to create order. Please try again.');
     }
   };
-  
+
   const handleVNPayPayment = async (orderData: any) => {
-    if (!orderData.shippingAddress.fullName) {
-      Alert.alert('Error', 'Full Name is required');
-      return;
-    }
-    if (!orderData.shippingAddress.phone) {
-      Alert.alert('Error', 'Phone is required');
-      return;
-    }
-    if (!orderData.shippingAddress.address) {
-      Alert.alert('Error', 'Address is required');
-      return;
-    }
-    if (!orderData.shippingAddress.city) {
-      Alert.alert('Error', 'City is required');
-      return;
-    }
-    if (!orderData.shippingAddress.country) {
-      Alert.alert('Error', 'Country is required');
-      return;
-    }
-  
     try {
       const response = await callApi('POST', '/api/payments/create_payment_url', {
         ...orderData,
         amount: packageDetail?.totalPrice,
       });
-  
+
       const vnpUrl = response.vnpUrl;
-      console.log("vnpUrl: ", vnpUrl);
-  
       if (vnpUrl) {
         await WebBrowser.openBrowserAsync(vnpUrl);
-  
+
         const returnResponse = await callApi('GET', '/api/payments/vnpay_return');
         if (returnResponse) {
           router.push({
-            pathname: '/OrderSuccessScreen',
+            pathname: '/OrderResultScreen',
             params: { vnpayData: JSON.stringify(returnResponse) }
           });
         } else {
@@ -182,101 +184,108 @@ const OrderFormScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to initiate VNPay payment. Please try again.');
     }
   };
+
+  const handleAddressSelect = (selectedAddress: any) => {
+    setFullName(selectedAddress.fullName);
+    setPhone(selectedAddress.phone);
+    setAddress(selectedAddress.address);
+    setCity(selectedAddress.city);
+    setCountry(selectedAddress.country);
+  };
   
-  
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Full Name:</Text>
-            <TextInput
-              style={styles.input}
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="Enter your full name"
-            />
-            <Text style={styles.label}>Phone:</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter your phone number"
-              keyboardType="phone-pad"
-            />
-            <Text style={styles.label}>Address:</Text>
-            <TextInput
-              style={styles.input}
-              value={address}
-              onChangeText={setAddress}
-              placeholder="Enter your address"
-            />
-            <Text style={styles.label}>City:</Text>
-            <TextInput
-              style={styles.input}
-              value={city}
-              onChangeText={setCity}
-              placeholder="Enter your city"
-            />
-            <Text style={styles.label}>Country:</Text>
-            <TextInput
-              style={styles.input}
-              value={country}
-              onChangeText={setCountry}
-              placeholder="Enter your country"
-            />
-            <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
-              <Text style={styles.locationButtonText}>
-                {locationLoading ? 'Locating...' : 'Use Current Location'}
-              </Text>
-            </TouchableOpacity>
+  return (
+    <View style={styles.container}>
+      <Appbar.Header style={{ backgroundColor: "transparent" }}>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Thanh toán" />
+      </Appbar.Header>
+
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.content}>
+          <View style={styles.section}>
+            <Title style={styles.title}>Địa chỉ giao hàng</Title>
+            <List.Section>
+              {/* Render saved addresses */}
+              {addresses.length === 0 ? (
+                <List.Item
+                  title="Chưa có địa chỉ nào"
+                  description="Nhấn vào đây để thêm địa chỉ mới"
+                  left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
+                  onPress={() => router.push('AddAddressScreen')}
+                />
+              ) : null}
+              {addresses.map((addr, index) => (
+                <TouchableHighlight key={index} onPress={() => router.push('AddAddressScreen')}>
+                  <List.Item
+                    title={`${addr.fullName}, ${addr.address}, ${addr.city}, ${addr.country}`}
+                    description={addr.phone}
+                    left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
+                  />
+                </TouchableHighlight>
+              ))}
+            </List.Section>
           </View>
-        );
-      case 1:
-        return (
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Number of Shipments:</Text>
+
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <Title style={styles.title}>Chi tiết đơn hàng</Title>
+            {packageDetail && (
+              <View>
+                {packageDetail.products.map((product, index) => (
+                  <View key={index}>
+                    <Image source={{ uri: product.product.productImage }} style={styles.productImage} />
+                    <Paragraph>{product.product.name}</Paragraph>
+                    <Paragraph>Thương hiệu: {product.product.brandID.name}</Paragraph>
+                    <Paragraph>Số lượng: {product.quantity}</Paragraph>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <Title style={styles.title}>Phương thức thanh toán</Title>
+            <RadioButton.Group
+              onValueChange={(value) => setPaymentMethod(value)}
+              value={paymentMethod}
+            >
+              <RadioButton.Item label="VNPay" value="VNPay" />
+              <RadioButton.Item label="Tiền mặt" value="Cash" />
+            </RadioButton.Group>
+          </View>
+
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <Title style={styles.title}>Combo giao hàng</Title>
+            <RadioButton.Group
+              onValueChange={(value) => setDeliveryCombo(value)}
+              value={deliveryCombo}
+            >
+              <RadioButton.Item label="2-4-6" value="2-4-6" />
+              <RadioButton.Item label="3-5-7" value="3-5-7" />
+            </RadioButton.Group>
+          </View>
+
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
             <TextInput
-              style={styles.input}
+              label="Số lần giao"
               value={numberOfShipment}
               onChangeText={setNumberOfShipment}
-              placeholder="Enter number of shipments"
+              style={styles.input}
               keyboardType="numeric"
             />
-            <Text style={styles.label}>Choose Combo Days:</Text>
-            <View style={styles.comboContainer}>
-              <TouchableOpacity
-                style={[styles.comboButton, deliveryCombo === '2-4-6' && styles.selectedButton]}
-                onPress={() => setDeliveryCombo('2-4-6')}
-              >
-                <Text style={[styles.comboText, deliveryCombo === '2-4-6' && styles.selectedText]}>2-4-6</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.comboButton, deliveryCombo === '3-5-7' && styles.selectedButton]}
-                onPress={() => setDeliveryCombo('3-5-7')}
-              >
-                <Text style={[styles.comboText, deliveryCombo === '3-5-7' && styles.selectedText]}>3-5-7</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.label}>Choose Payment Method:</Text>
-            <View style={styles.paymentContainer}>
-              <TouchableOpacity
-                style={[styles.paymentButton, paymentMethod === 'VNPay' && styles.selectedButton]}
-                onPress={() => setPaymentMethod('VNPay')}
-              >
-                <Text style={[styles.paymentText, paymentMethod === 'VNPay' && styles.selectedText]}>VNPay</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.paymentButton, paymentMethod === 'Cash' && styles.selectedButton]}
-                onPress={() => setPaymentMethod('Cash')}
-              >
-                <Text style={[styles.paymentText, paymentMethod === 'Cash' && styles.selectedText]}>Cash</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.label}>Select Start Delivery Date:</Text>
-            <TouchableOpacity onPress={() => setDatePickerVisibility(true)}>
-              <Text style={styles.datePicker}>{startDeliveryDate || 'Choose a start date'}</Text>
-            </TouchableOpacity>
+          </View>
+
+          <View style={styles.section}>
+            <Button onPress={() => setDatePickerVisibility(true)} style={styles.dateButton}>
+              {startDeliveryDate || 'Chọn ngày bắt đầu'}
+            </Button>
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
@@ -285,74 +294,28 @@ const OrderFormScreen: React.FC = () => {
               minimumDate={new Date()}
             />
           </View>
-        );
-      default:
-        return null;
-    }
-  };
 
-  return (
-    <GestureHandlerRootView style={styles.container}>
-      <Header
-        leftComponent={{
-          icon: 'arrow-back',
-          color: '#fff',
-          onPress: () => setCurrentStep((prev) => (prev > 0 ? prev - 1 : prev)),
-        }}
-        centerComponent={{ text: 'Order Form', style: { color: '#fff', fontSize: 20 } }}
-        containerStyle={styles.header}
-      />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <StepIndicator
-          stepCount={2}
-          customStyles={stepIndicatorStyles}
-          currentPosition={currentStep}
-          labels={['Delivery Address', 'Delivery Details']}
-        />
-        {renderStepContent()}
-        <View style={styles.buttonContainer}>
-          {currentStep > 0 && (
-            <TouchableOpacity style={styles.prevButton} onPress={() => setCurrentStep((prev) => prev - 1)}>
-              <Text style={styles.buttonText}>Back</Text>
-            </TouchableOpacity>
-          )}
-          {currentStep < 1 ? (
-            <TouchableOpacity style={styles.nextButton} onPress={() => setCurrentStep((prev) => prev + 1)}>
-              <Text style={styles.buttonText}>Next</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-          )}
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <Title style={styles.title}>Tổng giá: {packageDetail?.totalPrice} VND</Title>
+          </View>
+
+          <Button mode="contained" onPress={handleSubmit} style={styles.submitButton}>
+            Đặt hàng
+          </Button>
         </View>
       </ScrollView>
-    </GestureHandlerRootView>
-  );
-};
 
-const stepIndicatorStyles = {
-  stepIndicatorSize: 30,
-  currentStepIndicatorSize: 40,
-  separatorStrokeWidth: 2,
-  currentStepStrokeWidth: 3,
-  stepStrokeCurrentColor: '#fe7013',
-  stepStrokeWidth: 3,
-  stepStrokeFinishedColor: '#fe7013',
-  stepStrokeUnFinishedColor: '#aaaaaa',
-  separatorFinishedColor: '#fe7013',
-  separatorUnFinishedColor: '#aaaaaa',
-  stepIndicatorFinishedColor: '#fe7013',
-  stepIndicatorUnFinishedColor: '#ffffff',
-  stepIndicatorCurrentColor: '#ffffff',
-  stepIndicatorLabelFontSize: 15,
-  currentStepIndicatorLabelFontSize: 15,
-  stepIndicatorLabelCurrentColor: '#fe7013',
-  stepIndicatorLabelFinishedColor: '#ffffff',
-  stepIndicatorLabelUnFinishedColor: '#aaaaaa',
-  labelColor: '#999999',
-  labelSize: 13,
-  currentStepLabelColor: '#fe7013'
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={Snackbar.DURATION_SHORT}
+      >
+        {snackbarMessage}
+      </Snackbar>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -360,108 +323,56 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    backgroundColor: '#fe7013',
+  scrollView: {
+    flex: 1,
   },
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 16,
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 60, // Adjust this value according to your design
   },
-  formGroup: {
-    marginBottom: 16,
+  section: {
+    marginBottom: 20,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
+  title: {
+    color: 'black', 
+    fontWeight: 'bold', // Apply bold font weight
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 8,
-    marginBottom: 16,
+    marginBottom: 10,
+    backgroundColor: 'transparent',
   },
-  locationButton: {
-    backgroundColor: '#fe7013',
-    padding: 12,
-    borderRadius: 4,
+  button: {
+    marginTop: 10,
+    height: 50,
+    backgroundColor: '#47CEFF',
+    justifyContent: 'center',
   },
-  locationButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  comboContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
-  },
-  comboButton: {
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-  },
-  comboText: {
-    fontSize: 16,
-  },
-  selectedButton: {
-    backgroundColor: '#fe7013',
-  },
-  selectedText: {
-    color: '#fff',
-  },
-  paymentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
-  },
-  paymentButton: {
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-  },
-  paymentText: {
-    fontSize: 16,
-  },
-  datePicker: {
-    fontSize: 16,
-    color: '#fe7013',
-    textAlign: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  prevButton: {
-    backgroundColor: '#fe7013',
-    padding: 12,
-    borderRadius: 4,
-    flex: 1,
-    marginRight: 8,
-  },
-  nextButton: {
-    backgroundColor: '#fe7013',
-    padding: 12,
-    borderRadius: 4,
-    flex: 1,
+  dateButton: {
+    marginTop: 10,
+    height: 50,
+    justifyContent: 'center',
   },
   submitButton: {
-    backgroundColor: '#fe7013',
-    padding: 12,
-    borderRadius: 4,
-    flex: 1,
+    marginTop: 20,
+    height: 50,
+    backgroundColor: '#47CEFF',
+    justifyContent: 'center',
+    left: 0,
+    right: 0,
   },
-  buttonText: {
-    color: '#fff',
+  price: {
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+  },
+  divider: {
+    marginBottom: 10,
+    backgroundColor: '#000',
+  },
+  productImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
+    marginBottom: 10,
   },
 });
 

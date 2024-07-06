@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "n"
+      "bundleIdentifier": "com.quyphuc.milk_delivery_react_native"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,10 +29,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-font"
-    ],
+    "plugins": ["expo-router", "expo-font"],
     "experiments": {
       "typedRoutes": true
     },
@@ -42,6 +39,24 @@
       },
       "eas": {
         "projectId": "ba2804ab-66be-4a39-88fa-ae4e48d36bea"
+      },
+      "expo-router": {
+        "linking": {
+          "config": {
+            "screens": {
+              "WelcomeScreen": "welcome",
+              "LoginScreen": "login",
+              "RegisterScreen": "register",
+              "(tabs)": "tabs",
+              "ProductDetail": "product-detail",
+              "PackageDetail": "package-detail",
+              "OrderFormScreen": "order-form",
+              "CartScreen": "cart",
+              "+not-found": "*",
+              "PaymentReturn": "payments/vnpay_return"
+            }
+          }
+        }
       }
     }
   }

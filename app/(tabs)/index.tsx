@@ -85,6 +85,9 @@ const HomeScreen: React.FC = () => {
         {isSearching ? (
           <View style={styles.container}>
             <View style={styles.searchContainer}>
+              <TouchableOpacity style={styles.iconButton} onPress={handleBackPress}>
+                <Icon name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search..."
@@ -93,9 +96,6 @@ const HomeScreen: React.FC = () => {
                 onFocus={handleSearchFocus}
                 autoFocus
               />
-              <TouchableOpacity style={styles.iconButton} onPress={handleBackPress}>
-                <Icon name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
             </View>
             <View style={styles.searchHistoryContainer}>
               <Text style={styles.historyTitle}>Search History</Text>

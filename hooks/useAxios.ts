@@ -1,10 +1,12 @@
 import { getToken } from "@/utils/tokenHelpers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance } from "axios";
+import { useRouter } from "expo-router";
 import { useEffect } from "react";
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "https://milk-delivery-api.onrender.com",
+  // baseURL: "https://milk-delivery-api.onrender.com",
+  baseURL: "http://10.0.2.2:8000",
   headers: {
     "Content-Type": "application/json",
   },
@@ -48,21 +50,23 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const router = useRouter();
 
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         const newAccessToken = await refreshAccessToken();
         if (!newAccessToken) {
-          return Promise.reject(error); // If no new access token, reject error
+          return Promise.reject(error); // Nếu không có accessToken mới, từ chối lỗi
         }
         axios.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${newAccessToken}`;
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error("Failed to refresh access token:", refreshError);
-        // Optionally handle logout or redirection to login page
+        router.push("LoginScreen");
       }
     }
 

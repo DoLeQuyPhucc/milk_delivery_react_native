@@ -85,7 +85,7 @@ const HomeScreen: React.FC = () => {
         {isSearching ? (
           <View style={styles.container}>
             <View style={styles.searchContainer}>
-              <TouchableOpacity style={styles.iconButton} onPress={handleBackPress}>
+              <TouchableOpacity style={styles.arrowBack} onPress={handleBackPress}>
                 <Icon name="arrow-back" size={24} color="#000" />
               </TouchableOpacity>
               <TextInput
@@ -243,6 +243,9 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     marginLeft: 10,
+  },
+  arrowBack: {
+    marginRight: 10,
   },
   searchHistoryContainer: {
     marginVertical: 20,

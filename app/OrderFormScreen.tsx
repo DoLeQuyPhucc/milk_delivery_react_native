@@ -12,9 +12,7 @@ import {
   Title,
   Paragraph,
   Divider,
-  Subheading,
   List,
-  IconButton,
 } from 'react-native-paper';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import * as WebBrowser from 'expo-web-browser';
@@ -58,13 +56,13 @@ const OrderFormScreen: React.FC = () => {
     // Fetch addresses when component mounts
     fetchAddresses();
   }, [fetchAddresses]);
-  
+
   useEffect(() => {
     if (addresses.length > 0) {
       handleAddressSelect(addresses[0]);
     }
   }, [addresses]);
-  
+
   useFocusEffect(
     useCallback(() => {
       // Fetch addresses when the screen is focused
@@ -94,6 +92,8 @@ const OrderFormScreen: React.FC = () => {
 
     setDeliveredAt(date);
     setStartDeliveryDate(date.toLocaleDateString('vi-VN'));
+    console.log("DeliveredAt: ", deliveredAt);
+    
   };
 
   const handleSubmit = async () => {
@@ -140,7 +140,7 @@ const OrderFormScreen: React.FC = () => {
     };
 
     console.log('Order data:', orderData);
-    
+
     try {
       if (paymentMethod === 'VNPay') {
         await handleVNPayPayment(orderData);
@@ -192,7 +192,7 @@ const OrderFormScreen: React.FC = () => {
     setCity(selectedAddress.city);
     setCountry(selectedAddress.country);
   };
-  
+
   return (
     <View style={styles.container}>
       <Appbar.Header style={{ backgroundColor: "transparent" }}>
@@ -211,11 +211,12 @@ const OrderFormScreen: React.FC = () => {
                   title="Chưa có địa chỉ nào"
                   description="Nhấn vào đây để thêm địa chỉ mới"
                   left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
-                  onPress={() => router.push('AddAddressScreen')}
+                  onPress={() => router.push('AddressScreen')}
+                  underlayColor="transparent"
                 />
               ) : null}
               {addresses.map((addr, index) => (
-                <TouchableHighlight key={index} onPress={() => router.push('AddAddressScreen')}>
+                <TouchableHighlight key={index} onPress={() => router.push('AddressScreen')} underlayColor="transparent">
                   <List.Item
                     title={`${addr.fullName}, ${addr.address}, ${addr.city}, ${addr.country}`}
                     description={addr.phone}
@@ -233,13 +234,17 @@ const OrderFormScreen: React.FC = () => {
             {packageDetail && (
               <View>
                 {packageDetail.products.map((product, index) => (
-                  <View key={index}>
+                  <View key={index} style={styles.productDetailContainer}>
                     <Image source={{ uri: product.product.productImage }} style={styles.productImage} />
-                    <Paragraph>{product.product.name}</Paragraph>
-                    <Paragraph>Thương hiệu: {product.product.brandID.name}</Paragraph>
-                    <Paragraph>Số lượng: {product.quantity}</Paragraph>
+                    <View style={styles.productInfo}>
+                      <Paragraph>{product.product.name}</Paragraph>
+                      <Paragraph>Thương hiệu: {product.product.brandID.name}</Paragraph>
+                      <Paragraph>Số lượng: {product.quantity}</Paragraph>
+                      <Paragraph>Giá tiền: {product.product.price}</Paragraph>
+                    </View>
                   </View>
                 ))}
+                <Paragraph style={{fontWeight: "bold", color: "red"}}>Tổng cộng: {packageDetail.totalPrice} VND</Paragraph>
               </View>
             )}
           </View>
@@ -248,57 +253,53 @@ const OrderFormScreen: React.FC = () => {
 
           <View style={styles.section}>
             <Title style={styles.title}>Phương thức thanh toán</Title>
-            <RadioButton.Group
-              onValueChange={(value) => setPaymentMethod(value)}
-              value={paymentMethod}
-            >
-              <RadioButton.Item label="VNPay" value="VNPay" />
-              <RadioButton.Item label="Tiền mặt" value="Cash" />
+            <RadioButton.Group onValueChange={value => setPaymentMethod(value)} value={paymentMethod}>
+              <View style={styles.radioButtonContainer}>
+                <RadioButton value="VNPay" />
+                <Paragraph>Thanh toán VNPay</Paragraph>
+              </View>
+              <View style={styles.radioButtonContainer}>
+                <RadioButton value="COD" />
+                <Paragraph>Thanh toán khi nhận hàng (COD)</Paragraph>
+              </View>
             </RadioButton.Group>
           </View>
 
           <Divider style={styles.divider} />
 
           <View style={styles.section}>
-            <Title style={styles.title}>Combo giao hàng</Title>
-            <RadioButton.Group
-              onValueChange={(value) => setDeliveryCombo(value)}
-              value={deliveryCombo}
-            >
-              <RadioButton.Item label="2-4-6" value="2-4-6" />
-              <RadioButton.Item label="3-5-7" value="3-5-7" />
-            </RadioButton.Group>
-          </View>
-
-          <Divider style={styles.divider} />
-
-          <View style={styles.section}>
+            <Title style={styles.title}>Lịch giao hàng</Title>
             <TextInput
-              label="Số lần giao"
+              label="Số lần giao hàng"
               value={numberOfShipment}
               onChangeText={setNumberOfShipment}
-              style={styles.input}
               keyboardType="numeric"
+              style={styles.input}
+              mode="outlined"
             />
-          </View>
+            <Paragraph>Chọn combo giao hàng:</Paragraph>
+            <RadioButton.Group onValueChange={value => setDeliveryCombo(value)} value={deliveryCombo}>
+              <View style={styles.radioButtonContainer}>
+                <RadioButton value="2-4-6" />
+                <Paragraph>Thứ 2-4-6</Paragraph>
+              </View>
+              <View style={styles.radioButtonContainer}>
+                <RadioButton value="3-5-7" />
+                <Paragraph>Thứ 3-5-7</Paragraph>
+              </View>
+            </RadioButton.Group>
 
-          <View style={styles.section}>
-            <Button onPress={() => setDatePickerVisibility(true)} style={styles.dateButton}>
-              {startDeliveryDate || 'Chọn ngày bắt đầu'}
+            <Button onPress={() => setDatePickerVisibility(true)} mode="outlined">
+              Chọn ngày bắt đầu giao
             </Button>
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
               onConfirm={handleConfirm}
-              onCancel={() => setDatePickerVisibility(false)}
               minimumDate={new Date()}
+              onCancel={() => setDatePickerVisibility(false)}
             />
-          </View>
-
-          <Divider style={styles.divider} />
-
-          <View style={styles.section}>
-            <Title style={styles.title}>Tổng giá: {packageDetail?.totalPrice} VND</Title>
+            {startDeliveryDate && <Paragraph style={{marginTop: 15}}>Ngày bắt đầu giao hàng: {startDeliveryDate}</Paragraph>}
           </View>
 
           <Button mode="contained" onPress={handleSubmit} style={styles.submitButton}>
@@ -310,7 +311,7 @@ const OrderFormScreen: React.FC = () => {
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
-        duration={Snackbar.DURATION_SHORT}
+        duration={3000}
       >
         {snackbarMessage}
       </Snackbar>
@@ -321,58 +322,54 @@ const OrderFormScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 16,
     backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 60, // Adjust this value according to your design
+    flex: 1,
+    padding: 16,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   title: {
-    color: 'black', 
-    fontWeight: 'bold', // Apply bold font weight
+    fontSize: 25,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
   input: {
-    marginBottom: 10,
-    backgroundColor: 'transparent',
+    marginBottom: 16,
   },
-  button: {
-    marginTop: 10,
-    height: 50,
-    backgroundColor: '#47CEFF',
-    justifyContent: 'center',
+  radioButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  dateButton: {
-    marginTop: 10,
-    height: 50,
-    justifyContent: 'center',
-  },
-  submitButton: {
-    marginTop: 20,
-    height: 50,
-    backgroundColor: '#47CEFF',
-    justifyContent: 'center',
-    left: 0,
-    right: 0,
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  divider: {
-    marginBottom: 10,
-    backgroundColor: '#000',
+  productDetailContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    alignItems: 'center',
   },
   productImage: {
     width: 100,
     height: 100,
-    resizeMode: 'contain',
-    marginBottom: 10,
+    marginRight: 16,
+  },
+  productInfo: {
+    flex: 1,
+  },
+  submitButton: {
+    height: 50,
+    justifyContent: 'center',
+    backgroundColor: '#47CEFF'
+  },
+  divider: {
+    height: 2,
+    backgroundColor: 'gray',
+    marginVertical: 16,
   },
 });
 

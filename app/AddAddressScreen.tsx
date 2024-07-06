@@ -1,6 +1,7 @@
+// AddAddressScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { TextInput, Button, Snackbar, Title, Divider, List, IconButton } from 'react-native-paper';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { TextInput, Button, Snackbar, Title, Divider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store/store';
@@ -62,30 +63,16 @@ const AddAddressScreen: React.FC = () => {
     }
   };
 
-  const removeAddress = async (index: number) => {
-    try {
-      const updatedAddresses = addresses.filter((_, i) => i !== index);
-      await AsyncStorage.setItem(`addresses_${userID}`, JSON.stringify(updatedAddresses));
-      setAddresses(updatedAddresses);
-      setSnackbarMessage('Địa chỉ đã được xóa.');
-      setSnackbarVisible(true);
-    } catch (error) {
-      console.error('Không thể xóa địa chỉ:', error);
-      Alert.alert('Lỗi', 'Không thể xóa địa chỉ. Vui lòng thử lại.');
-    }
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Title>Thêm địa chỉ mới</Title>
-      <Divider style={styles.divider} />
       <TextInput
         label="Họ và tên"
         value={fullName}
         onChangeText={setFullName}
         style={styles.input}
         underlineColor="transparent"
-        theme={{ colors: { text: 'white', primary: 'white', background: 'transparent' } }}
+        mode='outlined'
       />
       <TextInput
         label="Số điện thoại"
@@ -94,7 +81,7 @@ const AddAddressScreen: React.FC = () => {
         style={styles.input}
         keyboardType="phone-pad"
         underlineColor="transparent"
-        theme={{ colors: { text: 'white', primary: 'white', background: 'transparent' } }}
+        mode='outlined'
       />
       <TextInput
         label="Địa chỉ"
@@ -102,7 +89,7 @@ const AddAddressScreen: React.FC = () => {
         onChangeText={setAddress}
         style={styles.input}
         underlineColor="transparent"
-        theme={{ colors: { text: 'white', primary: 'white', background: 'transparent' } }}
+        mode='outlined'
       />
       <TextInput
         label="Thành phố"
@@ -110,7 +97,7 @@ const AddAddressScreen: React.FC = () => {
         onChangeText={setCity}
         style={styles.input}
         underlineColor="transparent"
-        theme={{ colors: { text: 'white', primary: 'white', background: 'transparent' } }}
+        mode='outlined'
       />
       <TextInput
         label="Quốc gia"
@@ -119,7 +106,7 @@ const AddAddressScreen: React.FC = () => {
         style={styles.input}
         editable={false}
         underlineColor="transparent"
-        theme={{ colors: { text: 'white', primary: 'white', background: 'transparent' } }}
+        mode='outlined'
       />
       <Button mode="contained" onPress={saveAddress} style={styles.button} labelStyle={styles.buttonLabel}>
         Lưu địa chỉ
@@ -132,27 +119,6 @@ const AddAddressScreen: React.FC = () => {
       >
         {snackbarMessage}
       </Snackbar>
-
-      <Divider style={styles.divider} />
-
-      <Title>Địa chỉ đã lưu</Title>
-      <Divider style={styles.divider} />
-      <List.Section>
-        {addresses.map((addr, index) => (
-          <List.Item
-            key={index}
-            title={`${addr.fullName}, ${addr.address}, ${addr.city}, ${addr.country}`}
-            description={addr.phone}
-            right={(props) => (
-              <IconButton
-                {...props}
-                icon="delete"
-                onPress={() => removeAddress(index)}
-              />
-            )}
-          />
-        ))}
-      </List.Section>
     </ScrollView>
   );
 };
@@ -162,12 +128,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   input: {
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#47CEFF',
-    borderRadius: 20,
-    paddingHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 10,
   },
   button: {
     marginTop: 16,

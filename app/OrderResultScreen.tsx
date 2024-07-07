@@ -6,6 +6,7 @@ import { fetchPackages } from '@/redux/slices/packageSlice';
 import { useNavigation } from '@react-navigation/native';
 import { Divider } from 'react-native-elements';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 
 interface Package {
   _id: string;
@@ -18,10 +19,10 @@ interface Package {
   totalPrice: number;
 }
 
+
 const OrderResultScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const navigation = useNavigation();
   const { packages, status, error } = useSelector((state: RootState) => state.packages);
 
   useEffect(() => {
@@ -29,12 +30,26 @@ const OrderResultScreen: React.FC = () => {
   }, [dispatch]);
 
   const handleBuyAgain = () => {
-    router.push('(tabs)')
+    router.push('(tabs)');
   };
 
   const handleViewOrders = () => {
-    router.push('(tabs)')
+    router.push('(tabs)');
   };
+
+  useEffect(() => {
+    const handleDeepLink = ({ url }: { url: string }) => {
+      if (url.includes('order-result')) {
+        router.replace('OrderResultScreen');
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const renderPackageItem = ({ item }: { item: Package }) => (
     <View style={styles.packageItem}>

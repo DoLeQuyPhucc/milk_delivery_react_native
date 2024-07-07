@@ -64,7 +64,6 @@ const LoginScreen: React.FC = () => {
       
       return data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
       throw error;
     }
   };

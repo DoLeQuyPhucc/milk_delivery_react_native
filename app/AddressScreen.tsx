@@ -18,9 +18,9 @@ const AddressScreen: React.FC = () => {
         if (addressesJSON) {
           const storedAddresses = JSON.parse(addressesJSON);
           setAddresses(storedAddresses);
-          // if (storedAddresses.length > 0) {
-          //   handleAddressChoose(storedAddresses[0]); // Select first address by default
-          // }
+          if (storedAddresses.length > 0) {
+            handleAddressChoose(storedAddresses[0]); // Select first address by default
+          }
         }
       } catch (error) {
         console.error('Failed to load addresses:', error);
@@ -42,15 +42,15 @@ const AddressScreen: React.FC = () => {
     }
   };
 
-  // const handleAddressChoose = (selectedAddress: any) => {
-  //   // Navigate back to OrderFormScreen and pass selected address
-  //   router.push({
-  //     pathname: 'OrderFormScreen',
-  //     params: {
-  //       selectedAddress: selectedAddress,
-  //     },
-  //   });
-  // };
+  const handleAddressChoose = (selectedAddress: any) => {
+    // // Navigate back to OrderFormScreen and pass selected address
+    // router.replace({
+    //   pathname: 'OrderFormScreen',
+    //   params: {
+    //     selectedAddress: selectedAddress,
+    //   },
+    // });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -69,7 +69,7 @@ const AddressScreen: React.FC = () => {
                 onPress={() => removeAddress(index)}
               />
             )}
-            // onPress={() => handleAddressChoose(addr)}
+            onPress={() => handleAddressChoose(addr)}
           />
         ))}
       </List.Section>

@@ -86,76 +86,75 @@ const OrderFormScreen: React.FC = () => {
     const validDays = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
 
     if (!validDays.includes(selectedDay)) {
-      Alert.alert('Error', 'Selected delivery date does not match the delivery days. Please choose a valid date.');
-      return;
+        Alert.alert('Error', 'Selected delivery date does not match the delivery days. Please choose a valid date.');
+        return;
     }
 
     setDeliveredAt(date);
     setStartDeliveryDate(date.toLocaleDateString('vi-VN'));
     console.log("DeliveredAt: ", deliveredAt);
-    
-  };
+};
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
     if (!packageDetail) return;
 
     if (!fullName || !phone || !address || !city || !country || !numberOfShipment || !startDeliveryDate) {
-      setSnackbarMessage('Please fill in all fields.');
-      setSnackbarVisible(true);
-      return;
+        setSnackbarMessage('Please fill in all fields.');
+        setSnackbarVisible(true);
+        return;
     }
 
-    const deliveryDayNums = deliveryCombo === '2-4-6' ? [2, 4, 6] : [3, 5, 7];
+    const deliveryDayNums = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
     const deliveryDay = deliveredAt.getDay();
 
     if (!deliveryDayNums.includes(deliveryDay)) {
-      Alert.alert('Error', 'Selected delivery date does not match the delivery days.');
-      return;
+        Alert.alert('Error', 'Selected delivery date does not match the delivery days.');
+        return;
     }
 
     const numShipment = parseInt(numberOfShipment);
     if (isNaN(numShipment)) {
-      Alert.alert('Error', 'Number of Shipments must be a valid number.');
-      return;
+        Alert.alert('Error', 'Number of Shipments must be a valid number.');
+        return;
     }
 
     const formattedDeliveredAt = deliveredAt.toLocaleDateString('vi-VN');
     const formattedPaidAt = paymentMethod === 'VNPay' ? new Date().toLocaleDateString('vi-VN') : null;
 
     const orderData = {
-      packageID: packageDetail._id,
-      shippingAddress: {
-        fullName,
-        phone,
-        address,
-        city,
-        country,
-      },
-      paymentMethod,
-      userID,
-      isPaid: paymentMethod === 'VNPay',
-      paidAt: formattedPaidAt,
-      deliveredAt: formattedDeliveredAt,
-      numberOfShipment: numShipment,
+        packageID: packageDetail._id,
+        shippingAddress: {
+            fullName,
+            phone,
+            address,
+            city,
+            country,
+        },
+        paymentMethod,
+        userID,
+        isPaid: paymentMethod === 'VNPay',
+        paidAt: formattedPaidAt,
+        deliveredAt: formattedDeliveredAt,
+        numberOfShipment: numShipment,
     };
 
     console.log('Order data:', orderData);
 
     try {
-      if (paymentMethod === 'VNPay') {
-        await handleVNPayPayment(orderData);
-      } else {
-        const response = await callApi('POST', '/api/orders', orderData);
-        Alert.alert('Success', 'Order created successfully!');
-        router.push({
-          pathname: '/OrderResultScreen',
-          params: { orderData: JSON.stringify(response) }
-        });
-      }
+        if (paymentMethod === 'VNPay') {
+            await handleVNPayPayment(orderData);
+        } else {
+            const response = await callApi('POST', '/api/orders', orderData);
+            Alert.alert('Success', 'Order created successfully!');
+            router.push({
+                pathname: '/OrderResultScreen',
+                params: { orderData: JSON.stringify(response) }
+            });
+        }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create order. Please try again.');
+        Alert.alert('Error', 'Failed to create order. Please try again.');
     }
-  };
+};
 
   const handleVNPayPayment = async (orderData: any) => {
     try {

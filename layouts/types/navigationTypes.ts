@@ -13,5 +13,6 @@ export type RootStackParamList = {
   ProfileScreen: undefined;
   OrderScreen: undefined;
   OrderForm: undefined;
-  OrderResult: undefined;
+  OrderResult: { orderData: string } | { vnpayData: string };
+  AddressScreen: undefined;
 };

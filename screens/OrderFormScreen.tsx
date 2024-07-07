@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Alert, TouchableHighlight, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store/store';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Appbar,
   TextInput,
@@ -18,6 +18,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { callApi } from '@/hooks/useAxios';
+import { useNavigation } from '@/hooks/useNavigation'; // Ensure this is the correct import path
 
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
@@ -38,7 +39,7 @@ const OrderFormScreen: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const [addresses, setAddresses] = useState<any[]>([]); // State to store addresses
 
-  const router = useRouter();
+  const navigation = useNavigation();
   const dispatch = useDispatch<AppDispatch>();
 
   const fetchAddresses = useCallback(async () => {
@@ -146,10 +147,7 @@ const handleSubmit = async () => {
         } else {
             const response = await callApi('POST', '/api/orders', orderData);
             Alert.alert('Success', 'Order created successfully!');
-            router.push({
-                pathname: '/OrderResultScreen',
-                params: { orderData: JSON.stringify(response) }
-            });
+            navigation.navigate('OrderResult', { orderData: JSON.stringify(response) });
         }
     } catch (error) {
         Alert.alert('Error', 'Failed to create order. Please try again.');
@@ -169,10 +167,7 @@ const handleSubmit = async () => {
 
         const returnResponse = await callApi('GET', '/api/payments/vnpay_return');
         if (returnResponse) {
-          router.push({
-            pathname: '/OrderResultScreen',
-            params: { vnpayData: JSON.stringify(returnResponse) }
-          });
+          navigation.navigate('OrderResult', { vnpayData: JSON.stringify(returnResponse) });
         } else {
           Alert.alert('Error', 'Failed to get VNPay return data. Please try again.');
         }
@@ -195,7 +190,7 @@ const handleSubmit = async () => {
   return (
     <View style={styles.container}>
       <Appbar.Header style={{ backgroundColor: "transparent" }}>
-        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title="Thanh toán" />
       </Appbar.Header>
 
@@ -210,12 +205,12 @@ const handleSubmit = async () => {
                   title="Chưa có địa chỉ nào"
                   description="Nhấn vào đây để thêm địa chỉ mới"
                   left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
-                  onPress={() => router.push('AddressScreen')}
+                  onPress={() => navigation.navigate('AddressScreen')}
                   underlayColor="transparent"
                 />
               ) : null}
               {addresses.map((addr, index) => (
-                <TouchableHighlight key={index} onPress={() => router.push('AddressScreen')} underlayColor="transparent">
+                <TouchableHighlight key={index} onPress={() => navigation.navigate('AddressScreen')} underlayColor="transparent">
                   <List.Item
                     title={`${addr.fullName}, ${addr.address}, ${addr.city}, ${addr.country}`}
                     description={addr.phone}
@@ -235,15 +230,14 @@ const handleSubmit = async () => {
                 {packageDetail.products.map((product, index) => (
                   <View key={index} style={styles.productDetailContainer}>
                     <Image source={{ uri: product.product.productImage }} style={styles.productImage} />
-                    <View style={styles.productInfo}>
-                      <Paragraph>{product.product.name}</Paragraph>
-                      <Paragraph>Thương hiệu: {product.product.brandID.name}</Paragraph>
+                    <View style={styles.productDetails}>
+                      <Paragraph style={styles.productName}>{product.product.name}</Paragraph>
                       <Paragraph>Số lượng: {product.quantity}</Paragraph>
-                      <Paragraph>Giá tiền: {product.product.price}</Paragraph>
+                      <Paragraph>Giá: {product.product.price}</Paragraph>
+                      <Paragraph>Phân loại: {product.product.brandID.name}</Paragraph>
                     </View>
                   </View>
                 ))}
-                <Paragraph style={{fontWeight: "bold", color: "red"}}>Tổng cộng: {packageDetail.totalPrice} VND</Paragraph>
               </View>
             )}
           </View>
@@ -252,12 +246,12 @@ const handleSubmit = async () => {
 
           <View style={styles.section}>
             <Title style={styles.title}>Phương thức thanh toán</Title>
-            <RadioButton.Group onValueChange={value => setPaymentMethod(value)} value={paymentMethod}>
-              <View style={styles.radioButtonContainer}>
+            <RadioButton.Group onValueChange={(value) => setPaymentMethod(value)} value={paymentMethod}>
+              <View style={styles.radioButton}>
                 <RadioButton value="VNPay" />
                 <Paragraph>Thanh toán VNPay</Paragraph>
               </View>
-              <View style={styles.radioButtonContainer}>
+              <View style={styles.radioButton}>
                 <RadioButton value="COD" />
                 <Paragraph>Thanh toán khi nhận hàng (COD)</Paragraph>
               </View>
@@ -267,41 +261,54 @@ const handleSubmit = async () => {
           <Divider style={styles.divider} />
 
           <View style={styles.section}>
-            <Title style={styles.title}>Lịch giao hàng</Title>
+            <Title style={styles.title}>Gói giao hàng</Title>
+            <View style={styles.radioButton}>
+              <RadioButton.Group onValueChange={(value) => setDeliveryCombo(value)} value={deliveryCombo}>
+                <View style={styles.radioButton}>
+                  <RadioButton value="2-4-6" />
+                  <Paragraph>Giao hàng các ngày thứ 2-4-6</Paragraph>
+                </View>
+                <View style={styles.radioButton}>
+                  <RadioButton value="3-5-7" />
+                  <Paragraph>Giao hàng các ngày thứ 3-5-7</Paragraph>
+                </View>
+              </RadioButton.Group>
+            </View>
+          </View>
+
+          <View style={styles.section}>
             <TextInput
-              label="Số lần giao hàng"
+              label="Số lượng giao"
               value={numberOfShipment}
               onChangeText={setNumberOfShipment}
               keyboardType="numeric"
               style={styles.input}
-              mode="outlined"
+              mode='outlined'
             />
-            <Paragraph>Chọn combo giao hàng:</Paragraph>
-            <RadioButton.Group onValueChange={value => setDeliveryCombo(value)} value={deliveryCombo}>
-              <View style={styles.radioButtonContainer}>
-                <RadioButton value="2-4-6" />
-                <Paragraph>Thứ 2-4-6</Paragraph>
-              </View>
-              <View style={styles.radioButtonContainer}>
-                <RadioButton value="3-5-7" />
-                <Paragraph>Thứ 3-5-7</Paragraph>
-              </View>
-            </RadioButton.Group>
+          </View>
 
-            <Button onPress={() => setDatePickerVisibility(true)} mode="outlined">
-              Chọn ngày bắt đầu giao
-            </Button>
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <Title style={styles.title}>Ngày bắt đầu giao</Title>
+            <Button onPress={() => setDatePickerVisibility(true)}>Chọn ngày giao</Button>
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
               onConfirm={handleConfirm}
-              minimumDate={new Date()}
               onCancel={() => setDatePickerVisibility(false)}
             />
-            {startDeliveryDate && <Paragraph style={{marginTop: 15}}>Ngày bắt đầu giao hàng: {startDeliveryDate}</Paragraph>}
+            {startDeliveryDate ? <Paragraph>Ngày giao: {startDeliveryDate}</Paragraph> : null}
           </View>
 
-          <Button mode="contained" onPress={handleSubmit} style={styles.submitButton}>
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <Title style={styles.title}>Tổng giá</Title>
+            <Paragraph style={{color: 'red', fontWeight: 'bold'}}>{packageDetail ? packageDetail.totalPrice : '0'} VND</Paragraph>
+          </View>
+
+          <Button mode="contained" onPress={handleSubmit} style={styles.button}>
             Đặt hàng
           </Button>
         </View>
@@ -321,28 +328,36 @@ const handleSubmit = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 16,
     backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    flex: 1,
     padding: 16,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 25,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: 'transparent',
+    marginBottom: 8,
   },
-  radioButtonContainer: {
+  divider: {
+    marginVertical: 8,
+  },
+  button: {
+    marginTop: 16,
+    height: 50,
+    justifyContent: 'center',
+    backgroundColor: '#47CEFF'
+  },
+  radioButton: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
@@ -350,25 +365,17 @@ const styles = StyleSheet.create({
   productDetailContainer: {
     flexDirection: 'row',
     marginBottom: 16,
-    alignItems: 'center',
   },
   productImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     marginRight: 16,
   },
-  productInfo: {
+  productDetails: {
     flex: 1,
   },
-  submitButton: {
-    height: 50,
-    justifyContent: 'center',
-    backgroundColor: '#47CEFF'
-  },
-  divider: {
-    height: 2,
-    backgroundColor: 'gray',
-    marginVertical: 16,
+  productName: {
+    fontWeight: 'bold',
   },
 });
 

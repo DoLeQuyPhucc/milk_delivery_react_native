@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
-import { useRoute, RouteProp, useNavigation, NavigationProp } from '@react-navigation/native';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPackageById } from '@/redux/slices/packageDetailSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
@@ -9,23 +9,16 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Divider, Header } from 'react-native-elements';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import withRefreshControl from '@/components/withRefreshControl';
-
-type RootStackParamList = {
-  PackageDetail: { id: string };
-  CartScreen: undefined;
-  OrderFormScreen: undefined;
-};
-
-type PackageDetailRouteProp = RouteProp<RootStackParamList, 'PackageDetail'>;
+import { useNavigation } from '@/hooks/useNavigation';
 
 const PackageDetail: React.FC = () => {
-  const route = useRoute<PackageDetailRouteProp>();
-  const { id } = route.params;
+  const route = useRoute();
+  const { id } = route.params as { id: string };
   const dispatch = useDispatch<AppDispatch>();
   const { package: packageDetail, status, error } = useSelector((state: RootState) => state.packageDetail);
   const toastRef = useRef<any>(null);
 
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation();
 
   const [quantity, setQuantity] = useState(0);
 
@@ -126,7 +119,7 @@ const PackageDetail: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.orderButton, { backgroundColor: '#FF6F61' }]}
-            onPress={() => navigation.navigate('OrderFormScreen')}
+            onPress={() => navigation.navigate('OrderForm')}
           >
             <Text style={styles.orderButtonText}>Đặt hàng</Text>
           </TouchableOpacity>
@@ -229,7 +222,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

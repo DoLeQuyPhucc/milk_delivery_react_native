@@ -25,6 +25,7 @@ import fonts from '@/config/fonts';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from './types/navigationTypes';
 import useAuth from '@/hooks/useAuth';
+import AddressScreen from '@/screens/AddressScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -102,7 +103,7 @@ export default function Navigation() {
       <NavigationContainer
         theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
         linking={{
-          prefixes: ['exp://192.168.1.8:8081/'],
+          prefixes: ['exp://192.168.1.8:8081/--/'],
           config: {
             screens: {
               WelcomeScreen: 'welcome',
@@ -131,6 +132,7 @@ export default function Navigation() {
           <Stack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderForm" component={OrderFormScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderResult" component={OrderResultScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AddressScreen" component={AddressScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
         <Toast />
       </NavigationContainer>

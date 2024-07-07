@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation, NavigationProp } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPackageById } from '@/redux/slices/packageDetailSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
 import { CartItem, addToCart } from '@/redux/slices/cartSlice';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Divider, Header } from 'react-native-elements';
-import { useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import withRefreshControl from '@/components/withRefreshControl';
 
 type RootStackParamList = {
   PackageDetail: { id: string };
+  CartScreen: undefined;
+  OrderFormScreen: undefined;
 };
 
 type PackageDetailRouteProp = RouteProp<RootStackParamList, 'PackageDetail'>;
@@ -24,7 +25,7 @@ const PackageDetail: React.FC = () => {
   const { package: packageDetail, status, error } = useSelector((state: RootState) => state.packageDetail);
   const toastRef = useRef<any>(null);
 
-  const router = useRouter();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [quantity, setQuantity] = useState(0);
 
@@ -53,7 +54,7 @@ const PackageDetail: React.FC = () => {
       };
 
       dispatch(addToCart(cartItem));
-      if (toastRef.current) { 
+      if (toastRef.current) {
         toastRef.current.show({
           type: 'success',
           text1: 'Success',
@@ -82,12 +83,12 @@ const PackageDetail: React.FC = () => {
           leftComponent={{
             icon: 'arrow-back',
             color: 'black',
-            onPress: () => router.back(),
+            onPress: () => navigation.goBack(),
           }}
           rightComponent={{
             icon: 'shopping-cart',
             color: 'black',
-            onPress: () => router.push('CartScreen'),
+            onPress: () => navigation.navigate('CartScreen'),
           }}
           containerStyle={{ backgroundColor: '#f2f2f2' }}
         />
@@ -125,7 +126,7 @@ const PackageDetail: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.orderButton, { backgroundColor: '#FF6F61' }]}
-            onPress={() => router.push('OrderFormScreen')}
+            onPress={() => navigation.navigate('OrderFormScreen')}
           >
             <Text style={styles.orderButtonText}>Đặt hàng</Text>
           </TouchableOpacity>
@@ -150,106 +151,92 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  packageName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 10,
-  },
   image: {
     width: '100%',
     height: 200,
     resizeMode: 'contain',
-    marginBottom: 10,
-  },
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FF6F61',
-    marginBottom: 10,
-  },
-  productCount: {
-    fontSize: 16,
     marginBottom: 20,
   },
+  packageName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  totalPrice: {
+    fontSize: 20,
+    color: '#FF6F61',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  productCount: {
+    fontSize: 18,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   divider: {
+    backgroundColor: '#ccc',
     marginVertical: 10,
   },
   productRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
+    marginBottom: 20,
   },
   productImage: {
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
     resizeMode: 'contain',
     marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
   },
   productDetails: {
     flex: 1,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 5,
   },
   productDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    marginBottom: 5,
   },
   productBrand: {
     fontSize: 14,
-    color: '#666',
+    marginBottom: 5,
   },
   productQuantity: {
     fontSize: 14,
-    color: '#666',
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  quantityButton: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-  },
-  quantityText: {
-    fontSize: 18,
-    marginHorizontal: 10,
+    marginBottom: 5,
   },
   buttonContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10
-  },
-  cartIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
+    marginTop: 20,
   },
   iconButton: {
-    padding: 16,
-    width: 50,
-    height: 50,
-    marginRight: 10,
+    padding: 10,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cartIconContainer: {
+    width: 60,
+    height: 60,
   },
   orderButton: {
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
     flex: 1,
+    marginLeft: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   orderButtonText: {
-    fontSize: 16,
+    fontSize: 18,
+    color: '#FFF',
     fontWeight: 'bold',
-    color: '#fff',
   },
 });
 

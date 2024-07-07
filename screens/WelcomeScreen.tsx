@@ -12,12 +12,13 @@ import Spacing from "../constants/Spacing";
 import FontSize from "../constants/FontSize";
 import Colors from "../constants/Colors";
 import Font from "../constants/Font";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@/hooks/useNavigation";
+
 const { height } = Dimensions.get("window");
 
 const WelcomeScreen: React.FC = () => {
 
-  const router = useRouter();
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView>
@@ -66,7 +67,7 @@ const WelcomeScreen: React.FC = () => {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.replace("/LoginScreen")}
+            onPress={() => navigation.navigate("LoginScreen")}
             style={{
               backgroundColor: Colors.warmOrange,
               paddingVertical: Spacing * 1.5,
@@ -94,7 +95,7 @@ const WelcomeScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.replace("/RegisterScreen")}
+            onPress={() => navigation.navigate("RegisterScreen")}
             style={{
               paddingVertical: Spacing * 1.5,
               paddingHorizontal: Spacing * 2,

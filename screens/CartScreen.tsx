@@ -6,13 +6,13 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Checkbox from 'expo-checkbox';
 import { GestureHandlerRootView, TouchableOpacity, Swipeable } from 'react-native-gesture-handler';
 import { clearCart, updateCartQuantity, removeFromCart } from '@/redux/slices/cartSlice';
-import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { useNavigation } from '@/hooks/useNavigation';
 
 const CartScreen = () => {
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -95,7 +95,7 @@ const CartScreen = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Giỏ hàng</Text>
@@ -134,7 +134,7 @@ const CartScreen = () => {
             <Text style={styles.emptyCartText}>"Hông" có gì trong giỏ hết!</Text>
             <Text style={styles.emptyCartText}>Lướt Milk Delivery, lựa hàng ngay đi!</Text>
             <TouchableOpacity
-              onPress={() => router.push('(tabs)')}
+              onPress={() => navigation.navigate('Main')}
               style={[styles.buttonBuyWhenEmpty]}
             >
               <Text style={{ color: '#FFFFFF' }}>Mua sắm ngay!</Text>
@@ -160,7 +160,7 @@ const CartScreen = () => {
           ) : (
             <View style={styles.orderContainer}>
               <Text style={styles.totalPriceText}>Tổng: {calculateTotalPrice()}đ</Text>
-              <TouchableOpacity style={styles.orderButton} onPress={() => router.push('OrderFormScreen')}>
+              <TouchableOpacity style={styles.orderButton} onPress={() => navigation.navigate('OrderForm')}>
                 <Text style={styles.orderButtonText}>Mua hàng ({selectedItems.length})</Text>
               </TouchableOpacity>
             </View>

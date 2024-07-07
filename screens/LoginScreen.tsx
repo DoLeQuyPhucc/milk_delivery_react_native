@@ -20,13 +20,14 @@ import Font from "../constants/Font";
 import { Ionicons } from "@expo/vector-icons";
 import AppTextInput from "../components/AppTextInput";
 import { callApi } from "@/hooks/useAxios";
+import { useNavigation } from "@/hooks/useNavigation";
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
+  const navigation = useNavigation();
   const { status, error } = useSelector((state: RootState) => state.auth);
 
   const handleLogin = async () => {
@@ -36,7 +37,7 @@ const LoginScreen: React.FC = () => {
       await storeTokens(userData.accessToken, userData.refreshToken);
       const userProfile = await fetchUserProfile();
       dispatch(setUser(userProfile));
-      router.replace('/(tabs)');
+      navigation.navigate('Main');
     } catch (err) {
       console.error('Login failed:', err);
     } finally {
@@ -61,6 +62,9 @@ const LoginScreen: React.FC = () => {
       if (!accessToken) throw new Error('Access token not found');
       
       const data = await callApi('GET', '/api/auth/me');
+
+      console.log('User profile:', data);
+      
       
       return data;
     } catch (error) {
@@ -110,7 +114,7 @@ const LoginScreen: React.FC = () => {
             Wrong email or password
           </Text>
         )}
-        <TouchableOpacity onPress={() => router.replace("/RegisterScreen")} style={{ padding: Spacing }}>
+        <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")} style={{ padding: Spacing }}>
           <Text style={styles.createAccountText}>Create new account</Text>
         </TouchableOpacity>
         <View style={{ marginVertical: Spacing * 3 }}>

@@ -3,12 +3,12 @@ import { callApi } from "@/hooks/useAxios";
 
 export const fetchPackages = createAsyncThunk(
   "packages/fetchPackages",
-  async () => {
+  async (_, { rejectWithValue }) => {
     try {
       const data = await callApi("GET", "/api/packages/getAllPackages");
       return data;
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
@@ -33,9 +33,9 @@ const packageSlice = createSlice({
         state.packages = action.payload;
       })
       .addCase(fetchPackages.rejected, (state, action) => {
-        console.log("Fetching all packages: failed", action.error.message);
+        console.log("Fetching all packages: failed", action.payload);
         state.status = "failed";
-        state.error = action.error.message ?? null;
+        state.error = action.payload as string; // assuming the error is a string
       });
   },
 });

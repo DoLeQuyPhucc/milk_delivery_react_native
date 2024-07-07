@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@/hooks/useNavigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('token');
-      router.replace('/WelcomeScreen');
+      await AsyncStorage.removeItem('accessToken');
+      navigation.navigate('WelcomeScreen');
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -23,13 +23,13 @@ export default function ProfileScreen() {
         <Text style={styles.userEmail}>john.doe@example.com</Text>
       </View>
       <View style={styles.body}>
-        <TouchableOpacity style={styles.item} onPress={() => router.push('/OrderHistory')}>
+        <TouchableOpacity style={styles.item}>
           <Text style={styles.itemText}>Order History</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.item} onPress={() => router.push('/Settings')}>
+        <TouchableOpacity style={styles.item}>
           <Text style={styles.itemText}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.item} onPress={() => router.push('/Support')}>
+        <TouchableOpacity style={styles.item}>
           <Text style={styles.itemText}>Support</Text>
         </TouchableOpacity>
         <Button title="Logout" onPress={handleLogout} color="#FF3B30" />

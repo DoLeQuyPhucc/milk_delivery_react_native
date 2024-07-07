@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useDispatch } from 'react-redux';
 import { setUser } from '@/redux/slices/userSlice';
 import { AppDispatch } from '@/redux/store/store';
 import { callApi } from '@/hooks/useAxios';
+import { RootStackParamList } from '@/layouts/types/navigationTypes';
+
+type AuthLoadingScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'AuthLoadingScreen'
+>;
 
 const AuthLoadingScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const navigation = useNavigation<AuthLoadingScreenNavigationProp>();
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
@@ -19,9 +26,9 @@ const AuthLoadingScreen: React.FC = () => {
         if (token) {
           const userProfile = await fetchUserProfile(token);
           dispatch(setUser(userProfile));
-          router.replace('/(tabs)');
+          navigation.navigate('Main');
         } else {
-          router.replace('/WelcomeScreen');
+          navigation.navigate('WelcomeScreen');
         }
       } catch (error) {
         console.error('Error checking accessToken:', error);
@@ -41,7 +48,7 @@ const AuthLoadingScreen: React.FC = () => {
     };
 
     checkToken();
-  }, [router, dispatch]);
+  }, [dispatch]);
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
-// navigationTypes.ts
-
 export type RootStackParamList = {
-  Main: undefined;
+  Main: {
+    screen: keyof BottomTabParamList;
+  };
   HomeScreen: undefined;
   LoginScreen: undefined;
   RegisterScreen: undefined;
@@ -15,4 +15,11 @@ export type RootStackParamList = {
   OrderForm: undefined;
   OrderResult: { orderData: string } | { vnpayData: string };
   AddressScreen: undefined;
+  AddAddressScreen: undefined;
+};
+
+export type BottomTabParamList = {
+  Home: undefined;
+  Orders: undefined;
+  Profile: undefined;
 };

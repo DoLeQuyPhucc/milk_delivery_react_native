@@ -82,19 +82,20 @@ const OrderFormScreen: React.FC = () => {
 
   const handleConfirm = (date: Date) => {
     setDatePickerVisibility(false);
-
+  
     const selectedDay = date.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
     const validDays = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
-
+  
     if (!validDays.includes(selectedDay)) {
-        Alert.alert('Error', 'Selected delivery date does not match the delivery days. Please choose a valid date.');
-        return;
+      Alert.alert('Error', 'Selected delivery date does not match the delivery days. Please choose a valid date.');
+      return;
     }
-
-    setDeliveredAt(date);
-    setStartDeliveryDate(date.toLocaleDateString('vi-VN'));
-    console.log("DeliveredAt: ", deliveredAt);
-};
+  
+    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    setDeliveredAt(localDate);
+    setStartDeliveryDate(localDate.toLocaleDateString('vi-VN'));
+    console.log("DeliveredAt: ", localDate);
+  };  
 
 const handleSubmit = async () => {
     if (!packageDetail) return;

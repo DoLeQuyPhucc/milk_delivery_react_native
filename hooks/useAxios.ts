@@ -15,15 +15,17 @@ const refreshAccessToken = async () => {
   try {
     const refreshToken = await getToken("refreshToken");
     console.log("Refresh Token: (useAxios.ts)", refreshToken);
-    
+
     if (!refreshToken) {
       console.log("No refresh token available, skipping token refresh.");
       return null; // Return null if no refresh token
     }
+
     const response = await axios.post(
       "https://milk-delivery-api.onrender.com/api/auth/refreshToken",
       { refreshToken }
     );
+
     await AsyncStorage.setItem("accessToken", response.data.accessToken);
     return response.data.accessToken;
   } catch (error) {
@@ -51,21 +53,28 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (error.response.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         const newAccessToken = await refreshAccessToken();
         if (!newAccessToken) {
           return Promise.reject(error); // If no new access token, reject error
         }
-        axios.defaults.headers.common[
+        axiosInstance.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error("Failed to refresh access token:", refreshError);
+        // Optionally handle logout or redirection to login page
       }
+    } else if (error.response.status === 401) {
+      // Handle unauthorized access (e.g., redirect to login page)
+      // Clear tokens and redirect to login
+      await AsyncStorage.removeItem("accessToken");
+      await AsyncStorage.removeItem("refreshToken");
+      // Redirect to login page or show a login prompt
     }
 
     return Promise.reject(error);

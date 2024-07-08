@@ -40,29 +40,29 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-const handleAddToCart = () => {
-  if (product) {
-    const cartItem: CartItem = {
-      id: product._id,
-      name: product.name,
-      price: product.price,
-      quantity: quantity,
-      productImage: product.productImage || '',
-      brandID: {
-        name: product.brandID?.name || '',
-      },
-    };
+// const handleAddToCart = () => {
+//   if (product) {
+//     const cartItem: CartItem = {
+//       id: product._id,
+//       name: product.name,
+//       price: product.price,
+//       quantity: quantity,
+//       productImage: product.productImage || '',
+//       brandID: {
+//         name: product.brandID?.name || '',
+//       },
+//     };
 
-    dispatch(addToCart(cartItem));
-    if (toastRef.current) { 
-      toastRef.current.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Item added to cart successfully!',
-      });
-    }
-  }
-};
+//     dispatch(addToCart(cartItem));
+//     if (toastRef.current) { 
+//       toastRef.current.show({
+//         type: 'success',
+//         text1: 'Success',
+//         text2: 'Item added to cart successfully!',
+//       });
+//     }
+//   }
+// };
   
 
   const handleOrder = () => {
@@ -123,7 +123,7 @@ const handleAddToCart = () => {
             <TouchableOpacity
               style={[styles.cartIconContainer, styles.iconButton, { backgroundColor: quantity === 0 ? '#ccc' : 'green' }]}
               disabled={quantity === 0}
-              onPress={handleAddToCart}
+              // onPress={handleAddToCart}
             >
               <Icon name="shopping-cart" size={24} color="#FFF" />
             </TouchableOpacity>

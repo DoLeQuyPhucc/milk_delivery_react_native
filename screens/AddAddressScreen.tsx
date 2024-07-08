@@ -126,6 +126,7 @@ const AddAddressScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+    marginTop: 50
   },
   input: {
     marginTop: 10,

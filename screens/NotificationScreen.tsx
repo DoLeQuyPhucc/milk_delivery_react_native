@@ -1,13 +1,11 @@
-import { useRouter } from 'expo-router'
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Button } from 'react-native-elements'
 
 export default function NotificationScreen() {
-  const router = useRouter();
   return (
     <View style={styles.container}>
-      <Button onPress={() => router.push('OrderResultScreen')}>
+      <Button>
         Get Result
       </Button>
     </View>

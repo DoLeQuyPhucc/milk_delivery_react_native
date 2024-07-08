@@ -12,7 +12,6 @@ import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import WelcomeScreen from '@/screens/WelcomeScreen';
-import AuthLoadingScreen from '@/screens/AuthLoadingScreen';
 import ProductDetail from '../screens/ProductDetail';
 import PackageDetail from '../screens/PackageDetail';
 import OrderFormScreen from '../screens/OrderFormScreen';
@@ -26,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from './types/navigationTypes';
 import useAuth from '@/hooks/useAuth';
 import AddressScreen from '@/screens/AddressScreen';
+import AddAddressScreen from '@/screens/AddAddressScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -45,7 +45,7 @@ const tabBarProps: TabBarProps[] = [
     tabBarLabel: 'Orders',
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'list-outline',
+      iconName: 'cart-outline',
     },
   },
   {
@@ -132,7 +132,8 @@ export default function Navigation() {
           <Stack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderForm" component={OrderFormScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderResult" component={OrderResultScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="AddressScreen" component={AddressScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AddressScreen" component={AddressScreen} options={{ headerShown: true }} />
+          <Stack.Screen name="AddAddressScreen" component={AddAddressScreen} options={{ headerShown: true }} />
         </Stack.Navigator>
         <Toast />
       </NavigationContainer>

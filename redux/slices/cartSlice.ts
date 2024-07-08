@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
 import Toast from "react-native-toast-message";
+import { RootState } from "@/redux/store/store";
 
 export interface CartItem {
   id: string;
@@ -8,39 +9,52 @@ export interface CartItem {
   price: number;
   quantity: number;
   productImage?: string;
-  brandID?: {
-    name: string;
-  };
 }
 
 interface CartState {
+  userID: string;
   items: CartItem[];
   totalQuantity: number;
   totalPrice: number;
 }
 
-const getInitialCartState = (): CartState => {
-  const cookieCart = Cookies.get("cart");
+const getInitialCartState = (userID: string): CartState => {
+  const cookieCart = Cookies.get(`cart_${userID}`);
   if (cookieCart) {
     return JSON.parse(cookieCart);
   }
   return {
+    userID,
     items: [],
     totalQuantity: 0,
     totalPrice: 0,
   };
 };
 
-const initialState: CartState = getInitialCartState();
-
 const saveCartToCookies = (state: CartState) => {
-  Cookies.set("cart", JSON.stringify(state), { expires: 99999999999 });
+  Cookies.set(`cart_${state.userID}`, JSON.stringify(state), {
+    expires: 99999999999,
+  });
+};
+
+const initialState: CartState = {
+  userID: "",
+  items: [],
+  totalQuantity: 0,
+  totalPrice: 0,
 };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    setUserID(state, action: PayloadAction<string>) {
+      state.userID = action.payload;
+      const initialState = getInitialCartState(state.userID);
+      state.items = initialState.items;
+      state.totalQuantity = initialState.totalQuantity;
+      state.totalPrice = initialState.totalPrice;
+    },
     addToCart(state, action: PayloadAction<CartItem>) {
       const newItem = action.payload;
       const existingItem = state.items.find((item) => item.id === newItem.id);
@@ -50,7 +64,10 @@ const cartSlice = createSlice({
         state.items.push({ ...newItem, quantity: newItem.quantity });
       }
       state.totalQuantity += newItem.quantity;
-      state.totalPrice += newItem.price * newItem.quantity;
+      state.totalPrice = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      );
       saveCartToCookies(state);
       Toast.show({
         type: "success",
@@ -61,9 +78,12 @@ const cartSlice = createSlice({
       const id = action.payload;
       const existingItem = state.items.find((item) => item.id === id);
       if (existingItem) {
-        state.totalQuantity -= existingItem.quantity;
-        state.totalPrice -= existingItem.price * existingItem.quantity;
         state.items = state.items.filter((item) => item.id !== id);
+        state.totalQuantity -= existingItem.quantity;
+        state.totalPrice = state.items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
         saveCartToCookies(state);
       }
     },
@@ -75,8 +95,10 @@ const cartSlice = createSlice({
       const existingItem = state.items.find((item) => item.id === id);
       if (existingItem) {
         state.totalQuantity += quantity - existingItem.quantity;
-        state.totalPrice +=
-          (quantity - existingItem.quantity) * existingItem.price;
+        state.totalPrice = state.items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
         existingItem.quantity = quantity;
         saveCartToCookies(state);
       }
@@ -85,12 +107,16 @@ const cartSlice = createSlice({
       state.items = [];
       state.totalQuantity = 0;
       state.totalPrice = 0;
-      Cookies.remove("cart");
+      Cookies.remove(`cart_${state.userID}`);
     },
   },
 });
 
-export const { addToCart, removeFromCart, updateCartQuantity, clearCart } =
-  cartSlice.actions;
-
+export const {
+  setUserID,
+  addToCart,
+  removeFromCart,
+  updateCartQuantity,
+  clearCart,
+} = cartSlice.actions;
 export default cartSlice.reducer;

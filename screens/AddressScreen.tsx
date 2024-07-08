@@ -4,12 +4,12 @@ import { Title, Divider, List, IconButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store/store';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@/hooks/useNavigation';
 
 const AddressScreen: React.FC = () => {
   const [addresses, setAddresses] = useState<any[]>([]);
   const userID = useSelector((state: RootState) => state.user._id);
-  const router = useRouter();
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -73,7 +73,7 @@ const AddressScreen: React.FC = () => {
           />
         ))}
       </List.Section>
-      <TouchableOpacity style={styles.addButton} onPress={() => router.push('AddAddressScreen')}>
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddAddressScreen')}>
         <Title style={styles.addButtonText}>Thêm địa chỉ mới</Title>
       </TouchableOpacity>
     </ScrollView>
@@ -83,6 +83,7 @@ const AddressScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+    marginTop: 50,
   },
   divider: {
     marginVertical: 10,

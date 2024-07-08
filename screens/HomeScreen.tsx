@@ -7,7 +7,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchPackages } from '@/redux/slices/packageSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
 import { useNavigation } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import SkeletonLoader from '@/components/SkeletonHomeLoader';
 import withRefreshControl from '@/components/withRefreshControl';
@@ -16,12 +15,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type RootStackParamList = {
   Home: undefined;
   PackageDetail: { id: string };
+  CartScreen: undefined;
+  OrderResult: undefined;
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen: React.FC = () => {
-  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { packages, status, error } = useSelector((state: RootState) => state.packages);
@@ -142,7 +142,7 @@ const HomeScreen: React.FC = () => {
                     onFocus={handleSearchFocus}
                   />
                   <View style={styles.iconContainer}>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => router.push('CartScreen')}>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('OrderResult')}>
                       <Icon name="shopping-cart" size={24} color="#000" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.iconButton}>
@@ -220,7 +220,6 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    paddingTop: 50,
   },
   searchContainer: {
     flexDirection: 'row',

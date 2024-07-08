@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "milk_delivery_react_native",
-    "slug": "milk_delivery_react_native",
+    "slug": "milk-delivery",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -41,7 +41,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "ba2804ab-66be-4a39-88fa-ae4e48d36bea"
+        "projectId": "9d40349e-4124-4dc1-8e5b-bbe6c5ca17af"
       },
       "expo-router": {
         "linking": {
@@ -61,6 +61,7 @@
           }
         }
       }
-    }
+    },
+    "owner": "phucdeptrai0508"
   }
 }

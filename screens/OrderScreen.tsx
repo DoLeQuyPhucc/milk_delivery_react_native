@@ -61,9 +61,6 @@ const OrderScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
       <FlatList
         data={orders}
         keyExtractor={(order) => order._id}

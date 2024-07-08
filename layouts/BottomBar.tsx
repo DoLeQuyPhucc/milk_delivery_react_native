@@ -2,11 +2,12 @@ import { createMaterialBottomTabNavigator } from '@react-navigation/material-bot
 import { View, Text } from 'react-native';
 import { Icon } from 'native-base';
 import React from 'react';
+import { BottomTabParamList } from '@/layouts/types/navigationTypes';
 
-const Tab = createMaterialBottomTabNavigator();
+const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
 
 export interface TabBarProps {
-  route: string;
+  route: keyof BottomTabParamList;
   component: React.ComponentType<any>;
   tabBarLabel: string;
   tabBarIconProps: {

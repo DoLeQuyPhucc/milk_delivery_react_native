@@ -1,28 +1,32 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store/store';
 import { fetchPackages } from '@/redux/slices/packageSlice';
-import { useNavigation } from '@react-navigation/native';
 import { Divider } from 'react-native-elements';
-import { useRouter } from 'expo-router';
-import * as Linking from 'expo-linking';
+import { useNavigation } from '@/hooks/useNavigation';
 
 interface Package {
   _id: string;
   products: {
     product: {
+      brandID: {
+        name: string;
+      };
       name: string;
       productImage: string;
+      description: string;
+      price: number;
     };
+    quantity: number;
   }[];
+  totalAmount: number;
   totalPrice: number;
 }
 
-
 const OrderResultScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
+  const navigation = useNavigation();
   const { packages, status, error } = useSelector((state: RootState) => state.packages);
 
   useEffect(() => {
@@ -30,30 +34,23 @@ const OrderResultScreen: React.FC = () => {
   }, [dispatch]);
 
   const handleBuyAgain = () => {
-    router.push('(tabs)');
+    navigation.navigate('Main', {
+      screen: 'Home',
+    });
   };
 
   const handleViewOrders = () => {
-    router.push('(tabs)');
+    navigation.navigate('Main', {
+      screen: 'Orders',
+    });
   };
-
-  useEffect(() => {
-    const handleDeepLink = ({ url }: { url: string }) => {
-      if (url.includes('order-result')) {
-        router.replace('OrderResultScreen');
-      }
-    };
-
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   const renderPackageItem = ({ item }: { item: Package }) => (
     <View style={styles.packageItem}>
+      <Image source={{ uri: item.products[0].product.productImage }} style={styles.productImage} />
       <Text style={styles.packageName}>{item.products[0].product.name}</Text>
+      <Text style={styles.brandName}>{item.products[0].product.brandID.name}</Text>
+      <Text style={styles.productDescription}>{item.products[0].product.description}</Text>
       <Text style={styles.packagePrice}>
         {item.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
       </Text>
@@ -137,12 +134,12 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 10,
     marginRight: 10,
-    width: 150,
-    height: 180,
+    width: 200,
+    height: 280,
   },
   productImage: {
     width: '100%',
-    height: 80,
+    height: 120,
     resizeMode: 'contain',
     marginBottom: 10,
     borderRadius: 10,
@@ -150,6 +147,16 @@ const styles = StyleSheet.create({
   packageName: {
     fontSize: 14,
     fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  brandName: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 5,
+  },
+  productDescription: {
+    fontSize: 12,
+    color: '#666',
     marginBottom: 5,
   },
   packagePrice: {

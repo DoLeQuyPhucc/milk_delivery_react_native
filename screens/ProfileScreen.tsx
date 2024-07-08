@@ -1,14 +1,18 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const user = useSelector((state: RootState) => state.user);
 
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('refreshToken');
       navigation.navigate('WelcomeScreen');
     } catch (error) {
       console.error('Error logging out:', error);
@@ -18,9 +22,9 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: 'https://via.placeholder.com/150' }} style={styles.profileImage} />
-        <Text style={styles.userName}>John Doe</Text>
-        <Text style={styles.userEmail}>john.doe@example.com</Text>
+        <Image source={{ uri: user.avartaImage || 'https://via.placeholder.com/150' }} style={styles.profileImage} />
+        <Text style={styles.userName}>{`${user.firstName} ${user.lastName}`}</Text>
+        <Text style={styles.userEmail}>{user.email}</Text>
       </View>
       <View style={styles.body}>
         <TouchableOpacity style={styles.item}>

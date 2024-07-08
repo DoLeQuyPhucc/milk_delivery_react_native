@@ -4,18 +4,20 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPackageById } from '@/redux/slices/packageDetailSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
-import { CartItem, addToCart } from '@/redux/slices/cartSlice';
+import { CartItem, addToCart, setUserID } from '@/redux/slices/cartSlice';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Divider, Header } from 'react-native-elements';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import withRefreshControl from '@/components/withRefreshControl';
 import { useNavigation } from '@/hooks/useNavigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PackageDetail: React.FC = () => {
   const route = useRoute();
   const { id } = route.params as { id: string };
   const dispatch = useDispatch<AppDispatch>();
   const { package: packageDetail, status, error } = useSelector((state: RootState) => state.packageDetail);
+  const user = useSelector((state: RootState) => state.user);
   const toastRef = useRef<any>(null);
 
   const navigation = useNavigation();
@@ -23,6 +25,13 @@ const PackageDetail: React.FC = () => {
   const [quantity, setQuantity] = useState(0);
 
   useEffect(() => {
+    const setUser = async () => {
+      const userID = await AsyncStorage.getItem('userID');
+      if (userID) {
+        dispatch(setUserID(userID));
+      }
+    };
+    setUser();
     dispatch(fetchPackageById(id));
   }, [dispatch, id]);
 

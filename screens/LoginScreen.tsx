@@ -11,7 +11,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/redux/slices/authSlice";
 import { setUser } from "@/redux/slices/userSlice";
 import { RootState, AppDispatch } from "@/redux/store/store";
-import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Spacing from "../constants/Spacing";
 import FontSize from "../constants/FontSize";
@@ -37,7 +36,9 @@ const LoginScreen: React.FC = () => {
       await storeTokens(userData.accessToken, userData.refreshToken);
       const userProfile = await fetchUserProfile();
       dispatch(setUser(userProfile));
-      navigation.navigate('Main');
+      navigation.navigate('Main', {
+        screen: 'Home'
+      });
     } catch (err) {
       console.error('Login failed:', err);
     } finally {

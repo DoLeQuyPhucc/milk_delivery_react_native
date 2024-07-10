@@ -26,6 +26,10 @@ import { RootStackParamList } from './types/navigationTypes';
 import useAuth from '@/hooks/useAuth';
 import AddressScreen from '@/screens/AddressScreen';
 import AddAddressScreen from '@/screens/AddAddressScreen';
+import NotificationScreen from '@/screens/NotificationScreen';
+import OrderDetailScreen from '@/screens/OrderDetail';
+import { DEEP_LINKING_PREFIX } from '@env';
+import SearchResultsScreen from '@/screens/SearchResultScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -46,6 +50,15 @@ const tabBarProps: TabBarProps[] = [
     tabBarIconProps: {
       iconType: Ionicons,
       iconName: 'cart-outline',
+    },
+  },
+  {
+    route: 'Notifitcations',
+    component: NotificationScreen,
+    tabBarLabel: 'Notifitcations',
+    tabBarIconProps: {
+      iconType: Ionicons,
+      iconName: 'notifications-outline',
     },
   },
   {
@@ -103,7 +116,7 @@ export default function Navigation() {
       <NavigationContainer
         theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
         linking={{
-          prefixes: ['exp://192.168.1.8:8081/--/'],
+          prefixes: [DEEP_LINKING_PREFIX],
           config: {
             screens: {
               WelcomeScreen: 'welcome',
@@ -129,7 +142,9 @@ export default function Navigation() {
           <Stack.Screen name="ProductDetail" component={ProductDetail} options={{ headerShown: false }} />
           <Stack.Screen name="PackageDetail" component={PackageDetail} options={{ headerShown: false }} />
           <Stack.Screen name="CartScreen" component={CartScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderForm" component={OrderFormScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderResult" component={OrderResultScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AddressScreen" component={AddressScreen} options={{ headerShown: true }} />

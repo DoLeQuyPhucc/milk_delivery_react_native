@@ -101,7 +101,7 @@ const PackageDetail: React.FC = () => {
             <Text style={styles.totalPrice}>
               {packageDetail.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
             </Text>
-            <Text style={styles.productCount}>Số lượng sản phẩm: {packageDetail.products.length}</Text>
+            <Text style={styles.productCount}>Quantity Product: {packageDetail.products.length}</Text>
             <Divider style={styles.divider} />
 
             {packageDetail.products.map((item) => (
@@ -130,7 +130,7 @@ const PackageDetail: React.FC = () => {
             style={[styles.orderButton, { backgroundColor: '#FF6F61' }]}
             onPress={() => navigation.navigate('OrderForm')}
           >
-            <Text style={styles.orderButtonText}>Đặt hàng</Text>
+            <Text style={styles.orderButtonText}>Order</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 10,
     textAlign: 'center',
+    fontWeight: 'bold'
   },
   divider: {
     backgroundColor: '#ccc',
@@ -220,7 +221,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
   cartIconContainer: {
     width: 60,

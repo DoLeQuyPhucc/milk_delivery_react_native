@@ -14,6 +14,9 @@ const useAuth = () => {
       try {
         const accessToken = await AsyncStorage.getItem("accessToken");
         const refreshToken = await AsyncStorage.getItem("refreshToken");
+        console.log("Access Token: (useAuth.ts)", accessToken);
+        console.log("Refresh Token: (useAuth.ts)", refreshToken);
+        
         if (accessToken && refreshToken) {
           const userProfile = await fetchUserProfile();
           if (userProfile) {

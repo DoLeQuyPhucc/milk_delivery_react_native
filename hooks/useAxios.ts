@@ -2,9 +2,10 @@ import { getToken } from "@/utils/tokenHelpers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance } from "axios";
 import { useEffect } from "react";
+import { API_HOST } from "@env";
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "http://10.0.2.2:8000",
+  baseURL: `${API_HOST}`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,10 +22,9 @@ const refreshAccessToken = async () => {
       return null; // Return null if no refresh token
     }
 
-    const response = await axios.post(
-      "https://milk-delivery-api.onrender.com/api/auth/refreshToken",
-      { refreshToken }
-    );
+    const response = await axios.post(`${API_HOST}/api/auth/refreshtoken`, {
+      refreshToken,
+    });
 
     await AsyncStorage.setItem("accessToken", response.data.accessToken);
     return response.data.accessToken;
@@ -38,14 +38,14 @@ const refreshAccessToken = async () => {
 axiosInstance.interceptors.request.use(
   async (config) => {
     const token = await getToken("accessToken");
+    console.log("Access Token: (useAxios.ts)", token);
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 axiosInstance.interceptors.response.use(
@@ -58,7 +58,7 @@ axiosInstance.interceptors.response.use(
       try {
         const newAccessToken = await refreshAccessToken();
         if (!newAccessToken) {
-          return Promise.reject(error); // If no new access token, reject error
+          return Promise.reject(error);
         }
         axiosInstance.defaults.headers.common[
           "Authorization"
@@ -67,11 +67,9 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error("Failed to refresh access token:", refreshError);
-        // Optionally handle logout or redirection to login page
       }
     } else if (error.response.status === 401) {
       // Handle unauthorized access (e.g., redirect to login page)
-      // Clear tokens and redirect to login
       await AsyncStorage.removeItem("accessToken");
       await AsyncStorage.removeItem("refreshToken");
       // Redirect to login page or show a login prompt
@@ -82,7 +80,7 @@ axiosInstance.interceptors.response.use(
 );
 
 export const callApi = async (
-  method: "GET" | "POST" | "PUT" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
   url: string,
   data?: any
 ) => {

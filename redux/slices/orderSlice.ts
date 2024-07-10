@@ -1,5 +1,6 @@
-// src/store/ordersSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSelector } from "reselect";
+import { RootState } from "@/redux/store/store"; // Ensure this path is correct
 import { callApi } from "@/hooks/useAxios";
 
 interface Product {
@@ -18,6 +19,12 @@ interface Package {
 interface Order {
   _id: string;
   package: Package;
+  status: string;
+  deliveredAt: string;
+  circleShipment: {
+    tracking: { isDelivered: boolean }[];
+    numberOfShipment: number;
+  };
 }
 
 interface OrdersState {
@@ -61,5 +68,14 @@ const ordersSlice = createSlice({
       });
   },
 });
+
+export const selectOrders = (state: RootState) => state.orders.orders;
+export const selectOrdersLoading = (state: RootState) => state.orders.loading;
+export const selectOrdersError = (state: RootState) => state.orders.error;
+
+export const makeSelectOrdersByStatus = (status: string) =>
+  createSelector([selectOrders], (orders) =>
+    orders.filter((order) => order.status === status)
+  );
 
 export default ordersSlice.reducer;

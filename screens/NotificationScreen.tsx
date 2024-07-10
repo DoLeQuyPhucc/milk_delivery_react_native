@@ -5,9 +5,7 @@ import { Button } from 'react-native-elements'
 export default function NotificationScreen() {
   return (
     <View style={styles.container}>
-      <Button>
-        Get Result
-      </Button>
+      <Text>You don't have any notifications. </Text>
     </View>
   )
 }

@@ -17,6 +17,7 @@ type RootStackParamList = {
   PackageDetail: { id: string };
   CartScreen: undefined;
   OrderResult: undefined;
+  SearchResults: { query: string };
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -56,12 +57,13 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleSearch = (query: string) => {
-    if (query.trim().length > 0) {
-      saveSearchHistory(query);
+  const handleSearch = () => {
+    if (searchQuery.trim().length > 0) {
+      saveSearchHistory(searchQuery);
+      navigation.navigate('SearchResults', { query: searchQuery });
+      setSearchQuery('');
+      setIsSearching(false);
     }
-    setSearchQuery(query);
-    setIsSearching(false);
   };
 
   const handleSearchFocus = () => {
@@ -73,145 +75,111 @@ const HomeScreen: React.FC = () => {
     Keyboard.dismiss();
   };
 
-  const suggestedPackages = packages.filter((pkg) =>
-    pkg.products.some((product: any) =>
-      product.product.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
-
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView>
-        {isSearching ? (
-          <View style={styles.container}>
-            <View style={styles.searchContainer}>
-              <TouchableOpacity style={styles.arrowBack} onPress={handleBackPress}>
-                <Icon name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search..."
-                value={searchQuery}
-                onChangeText={(text) => setSearchQuery(text)}
-                onFocus={handleSearchFocus}
-                autoFocus
-              />
-            </View>
-            <View style={styles.searchHistoryContainer}>
-              <Text style={styles.historyTitle}>Search History</Text>
-              <FlatList
-                data={searchHistory}
-                renderItem={({ item }) => (
-                  <TouchableOpacity onPress={() => handleSearch(item)}>
-                    <Text style={styles.historyItem}>{item}</Text>
-                  </TouchableOpacity>
+        <ScrollView>
+          {status === 'loading' ? (
+            <SkeletonLoader />
+          ) : (
+            <View style={styles.container}>
+              <View style={styles.searchContainer}>
+                {isSearching ? (
+                  <>
+                    <TouchableOpacity style={styles.arrowBack} onPress={handleBackPress}>
+                      <Icon name="arrow-back" size={24} color="#000" />
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChangeText={(text) => setSearchQuery(text)}
+                      onFocus={handleSearchFocus}
+                      autoFocus
+                    />
+                    <TouchableOpacity style={styles.iconButton} onPress={handleSearch}>
+                      <Icon name="search" size={24} color="#000" />
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search..."
+                      onFocus={handleSearchFocus}
+                    />
+                    <View style={styles.iconContainer}>
+                      <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('OrderResult')}>
+                        <Icon name="shopping-cart" size={24} color="#000" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconButton}>
+                        <Icon name="notifications" size={24} color="#000" />
+                      </TouchableOpacity>
+                    </View>
+                  </>
                 )}
-                keyExtractor={(item, index) => index.toString()}
-              />
-            </View>
-            <View style={styles.divider} />
-            <Text style={styles.suggestionsTitle}>Suggestions</Text>
-            <FlatList
-              data={suggestedPackages}
-              renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => navigation.navigate('PackageDetail', { id: item._id })}>
-                  <View style={styles.package}>
-                    <Image source={{ uri: item.products[0].product.productImage }} style={styles.productImage} />
-                    <Text style={styles.packageName}>{item.products[0].product.name}</Text>
-                    <Text style={styles.packagePrice}>
-                      {item.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item._id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        ) : (
-          <ScrollView>
-            {status === 'loading' ? (
-              <SkeletonLoader />
-            ) : (
-              <View style={styles.container}>
-                <View style={styles.searchContainer}>
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search..."
-                    onFocus={handleSearchFocus}
-                  />
-                  <View style={styles.iconContainer}>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('OrderResult')}>
-                      <Icon name="shopping-cart" size={24} color="#000" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                      <Icon name="notifications" size={24} color="#000" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <Image
-                  source={{ uri: 'https://cdn.tgdd.vn//News/1425889//sua-chua-th-true-milk-banner-845x264.png' }}
-                  style={styles.bannerImage}
-                />
-                <View style={styles.iconGroupContainer}>
-                  <TouchableOpacity style={styles.icon}>
-                    <Image source={require('@/assets/images/th-true-milk.png')} style={styles.iconImage} />
-                    <Text style={styles.iconText}>TH True Milk</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.icon}>
-                    <Image source={require('@/assets/images/vinamilk.png')} style={styles.iconImage} />
-                    <Text style={styles.iconText}>Vinamilk</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.icon}>
-                    <Image source={require('@/assets/images/lothamilk.png')} style={styles.iconImage} />
-                    <Text style={styles.iconText}>Lothamilk</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.promotionContainer}>
-                  <Text style={styles.promotionTitle}>Gói sữa đang khuyến mãi</Text>
-                  <FlatList
-                    horizontal
-                    data={packages.slice(0, Math.ceil(packages.length / 2))}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity onPress={() => navigation.navigate('PackageDetail', { id: item._id })}>
-                        <View style={styles.package}>
-                          <Image source={{ uri: item.products[0].product.productImage }} style={styles.productImage} />
-                          <Text style={styles.packageName}>{item.products[0].product.name}</Text>
-                          <Text style={styles.packagePrice}>
-                            {item.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item._id}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
-                <View style={styles.featuredContainer}>
-                  <Text style={styles.featuredTitle}>Gói sữa nổi bật</Text>
-                  <FlatList
-                    horizontal
-                    data={packages.slice(Math.ceil(packages.length / 2))}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity onPress={() => navigation.navigate('PackageDetail', { id: item._id })}>
-                        <View style={styles.package}>
-                          <Image source={{ uri: item.products[0].product.productImage }} style={styles.productImage} />
-                          <Text style={styles.packageName}>{item.products[0].product.name}</Text>
-                          <Text style={styles.packagePrice}>
-                            {item.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item._id}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
               </View>
-            )}
-          </ScrollView>
-        )}
+              <Image
+                source={{ uri: 'https://cdn.tgdd.vn//News/1425889//sua-chua-th-true-milk-banner-845x264.png' }}
+                style={styles.bannerImage}
+              />
+              <View style={styles.iconGroupContainer}>
+                <TouchableOpacity style={styles.icon}>
+                  <Image source={require('@/assets/images/th-true-milk.png')} style={styles.iconImage} />
+                  <Text style={styles.iconText}>TH True Milk</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.icon}>
+                  <Image source={require('@/assets/images/vinamilk.png')} style={styles.iconImage} />
+                  <Text style={styles.iconText}>Vinamilk</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.icon}>
+                  <Image source={require('@/assets/images/lothamilk.png')} style={styles.iconImage} />
+                  <Text style={styles.iconText}>Lothamilk</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.promotionContainer}>
+                <Text style={styles.promotionTitle}>Milk packages are on promotion</Text>
+                <FlatList
+                  horizontal
+                  data={packages.slice(0, Math.ceil(packages.length / 2))}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => navigation.navigate('PackageDetail', { id: item._id })}>
+                      <View style={styles.package}>
+                        <Image source={{ uri: item.products[0].product.productImage }} style={styles.productImage} />
+                        <Text style={styles.packageName}>{item.products[0].product.name}</Text>
+                        <Text style={styles.packagePrice}>
+                          {item.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item._id}
+                  showsHorizontalScrollIndicator={false}
+                />
+              </View>
+              <View style={styles.featuredContainer}>
+                <Text style={styles.featuredTitle}>Outstanding milk package</Text>
+                <FlatList
+                  horizontal
+                  data={packages.slice(Math.ceil(packages.length / 2))}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => navigation.navigate('PackageDetail', { id: item._id })}>
+                      <View style={styles.package}>
+                        <Image source={{ uri: item.products[0].product.productImage }} style={styles.productImage} />
+                        <Text style={styles.packageName}>{item.products[0].product.name}</Text>
+                        <Text style={styles.packagePrice}>
+                          {item.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={(item) => item._id}
+                  showsHorizontalScrollIndicator={false}
+                />
+              </View>
+            </View>
+          )}
+        </ScrollView>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
@@ -245,29 +213,6 @@ const styles = StyleSheet.create({
   },
   arrowBack: {
     marginRight: 10,
-  },
-  searchHistoryContainer: {
-    marginVertical: 20,
-  },
-  historyTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  historyItem: {
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    marginVertical: 10,
-  },
-  suggestionsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   bannerImage: {
     width: '100%',
@@ -348,3 +293,4 @@ const styles = StyleSheet.create({
 });
 
 export default withRefreshControl(HomeScreen);
+

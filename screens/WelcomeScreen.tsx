@@ -13,12 +13,19 @@ import FontSize from "../constants/FontSize";
 import Colors from "../constants/Colors";
 import Font from "../constants/Font";
 import { useNavigation } from "@/hooks/useNavigation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { height } = Dimensions.get("window");
 
 const WelcomeScreen: React.FC = () => {
 
   const navigation = useNavigation();
+  
+  const accessToken = AsyncStorage.getItem("accessToken");
+  const refreshToken = AsyncStorage.getItem("refreshToken");
+
+  console.log("Access Token: (WelcomeScreen.tsx)", accessToken);
+  console.log("Refresh Token: (WelcomeScreen.tsx)", refreshToken);
 
   return (
     <SafeAreaView>

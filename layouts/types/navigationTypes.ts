@@ -7,11 +7,13 @@ export type RootStackParamList = {
   RegisterScreen: undefined;
   WelcomeScreen: undefined;
   AuthLoadingScreen: undefined;
+  SearchResults: { query: string };
   ProductDetail: undefined;
-  PackageDetail: undefined;
+  PackageDetail: { id: string };
   CartScreen: undefined;
   ProfileScreen: undefined;
   OrderScreen: undefined;
+  OrderDetail: { orderId: string };
   OrderForm: undefined;
   OrderResult: { orderData: string } | { vnpayData: string };
   AddressScreen: undefined;
@@ -22,4 +24,5 @@ export type BottomTabParamList = {
   Home: undefined;
   Orders: undefined;
   Profile: undefined;
+  Notifications: undefined;
 };

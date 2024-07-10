@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Text, View, Image, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, Image, FlatList, StyleSheet } from 'react-native';
 import { AppDispatch, RootState } from '@/redux/store/store';
-import { fetchOrders } from '@/redux/slices/orderSlice';
-import { useNavigation } from '@react-navigation/native';
+import { fetchOrders, makeSelectOrdersByStatus, selectOrdersLoading, selectOrdersError } from '@/redux/slices/orderSlice';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import { useNavigation } from '@/hooks/useNavigation';
+
+const Tab = createMaterialTopTabNavigator();
 
 const OrderScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigation = useNavigation();
   const userID = useSelector((state: RootState) => state.user._id);
-  
-  const { orders, loading, error } = useSelector((state: RootState) => state.orders);
 
   useEffect(() => {
     if (userID) {
@@ -18,33 +19,60 @@ const OrderScreen: React.FC = () => {
     }
   }, [dispatch, userID]);
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.orderContainer}>
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Pending" children={() => <OrderList status="Pending" />} />
+      <Tab.Screen name="Out for Delivery" children={() => <OrderList status="Out for Delivery" />} />
+      <Tab.Screen name="Delivered" children={() => <OrderList status="Delivered" />} />
+      <Tab.Screen name="Cancelled" children={() => <OrderList status="Cancelled" />} />
+    </Tab.Navigator>
+  );
+};
+
+const OrderList = ({ status }: { status: string }) => {
+  const selectOrdersByStatus = React.useMemo(() => makeSelectOrdersByStatus(status), [status]);
+  const orders = useSelector(selectOrdersByStatus);
+  const loading = useSelector(selectOrdersLoading);
+  const error = useSelector(selectOrdersError);
+  const navigation = useNavigation();
+
+  const renderProduct = ({ item: productItem }: { item: any }) => (
+    <View style={styles.productContainer}>
+      <Image source={{ uri: productItem.product.productImage }} style={styles.image} />
+      <View style={styles.details}>
+        <Text style={styles.productName}>{productItem.product.name}</Text>
+        <Text style={styles.description}>{productItem.product.description}</Text>
+        <Text style={styles.price}>Price: {productItem.product.price} VND</Text>
+        <Text style={styles.quantity}>Quantity: {productItem.quantity}</Text>
+      </View>
+    </View>
+  );
+
+  const renderOrder = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.orderContainer}
+      onPress={() => navigation.navigate('OrderDetail', { orderId: item._id })}
+    >
       <View style={styles.orderHeader}>
-        <Text style={styles.header}>Order ID: {item._id}</Text>
+        <Text style={styles.header}>Order Date: {item.deliveredAt}</Text>
         <Text style={[styles.status, getStatusStyle(item.status)]}>{item.status}</Text>
       </View>
-      <Text style={styles.orderDate}>Order Date: {new Date(item.createdAt).toLocaleDateString()}</Text>
       <FlatList
         data={item.package.products}
         keyExtractor={(product) => product._id}
-        renderItem={({ item: productItem }) => (
-          <View style={styles.productContainer}>
-            <Image source={{ uri: productItem.product.productImage }} style={styles.image} />
-            <View style={styles.details}>
-              <Text style={styles.productName}>{productItem.product.name}</Text>
-              <Text style={styles.description}>{productItem.product.description}</Text>
-              <Text style={styles.price}>Price: {productItem.product.price} VND</Text>
-              <Text style={styles.quantity}>Quantity: {productItem.quantity}</Text>
-            </View>
-          </View>
-        )}
+        renderItem={renderProduct}
       />
       <View style={styles.totalContainer}>
         <Text style={styles.totalLabel}>Total Price:</Text>
-        <Text style={styles.totalPrice}>{item.totalPrice} VND</Text>
+        <Text style={styles.totalPrice}>{item.package.totalPrice} VND</Text>
       </View>
-    </View>
+      <View style={styles.deliveryInfo}>
+        <Text style={styles.deliveryLabel}>Shipments Delivered:</Text>
+        <Text style={styles.deliveryCount}>
+          {item.circleShipment.tracking.filter((track: any) => track.isDelivered).length} / {item.circleShipment.numberOfShipment}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -56,17 +84,15 @@ const OrderScreen: React.FC = () => {
   }
 
   if (orders.length === 0) {
-    return <Text style={styles.noOrders}>You have no orders yet.</Text>;
+    return <Text style={styles.noOrders}>No orders found.</Text>;
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={orders}
-        keyExtractor={(order) => order._id}
-        renderItem={renderItem}
-      />
-    </View>
+    <FlatList
+      data={orders}
+      keyExtractor={(order) => order._id}
+      renderItem={renderOrder}
+    />
   );
 };
 
@@ -74,7 +100,7 @@ const getStatusStyle = (status: string) => {
   switch (status) {
     case 'Pending':
       return { color: '#f39c12' };
-    case 'Completed':
+    case 'Delivered':
       return { color: '#27ae60' };
     case 'Cancelled':
       return { color: '#e74c3c' };
@@ -111,11 +137,7 @@ const styles = StyleSheet.create({
   },
   status: {
     fontSize: 14,
-  },
-  orderDate: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontWeight: 'bold',
   },
   productContainer: {
     flexDirection: 'row',
@@ -187,16 +209,16 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: '#7f8c8d',
   },
-  backButton: {
-    marginBottom: 16,
-    padding: 10,
-    backgroundColor: '#3498db',
-    borderRadius: 5,
+  deliveryInfo: {
+    marginTop: 8,
   },
-  backButtonText: {
-    color: '#fff',
-    textAlign: 'center',
+  deliveryLabel: {
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  deliveryCount: {
+    fontSize: 16,
+    color: '#2980b9',
   },
 });
 

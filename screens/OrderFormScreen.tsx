@@ -18,7 +18,8 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { callApi } from '@/hooks/useAxios';
-import { useNavigation } from '@/hooks/useNavigation'; // Ensure this is the correct import path
+import { useNavigation } from '@/hooks/useNavigation';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const OrderFormScreen: React.FC = () => {
   const { package: packageDetail } = useSelector((state: RootState) => state.packageDetail);
@@ -37,7 +38,9 @@ const OrderFormScreen: React.FC = () => {
   const [startDeliveryDate, setStartDeliveryDate] = useState<string>('');
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [addresses, setAddresses] = useState<any[]>([]); // State to store addresses
+  const [isBusy, setIsBusy] = useState<boolean>(false); // State to track if the form is busy
 
   const navigation = useNavigation();
   const dispatch = useDispatch<AppDispatch>();
@@ -71,6 +74,20 @@ const OrderFormScreen: React.FC = () => {
     }, [fetchAddresses])
   );
 
+  useEffect(() => {
+    if (packageDetail) {
+      if (numberOfShipment.trim() === '' || isNaN(parseInt(numberOfShipment))) {
+        // Nếu số lần giao hàng không hợp lệ, set totalPrice về giá trị ban đầu từ packageDetail
+        setTotalPrice(packageDetail.totalPrice);
+      } else {
+        // Tính lại totalPrice dựa trên packageDetail.totalPrice và numberOfShipment
+        const newTotalPrice = packageDetail.totalPrice * parseInt(numberOfShipment);
+        setTotalPrice(newTotalPrice);
+      }
+    }
+  }, [packageDetail, numberOfShipment]);
+  
+  
   const saveAddresses = async (updatedAddresses: any[]) => {
     try {
       await AsyncStorage.setItem(`addresses_${userID}`, JSON.stringify(updatedAddresses));
@@ -80,6 +97,10 @@ const OrderFormScreen: React.FC = () => {
     }
   };
 
+  const handleNumberOfShipmentChange = (value: string) => {
+    setNumberOfShipment(value);
+  };
+
   const handleConfirm = (date: Date) => {
     setDatePickerVisibility(false);
   
@@ -87,85 +108,101 @@ const OrderFormScreen: React.FC = () => {
     const validDays = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
   
     if (!validDays.includes(selectedDay)) {
-      Alert.alert('Error', 'Selected delivery date does not match the delivery days. Please choose a valid date.');
+      Alert.alert(
+        'Error',
+        'Selected delivery date does not match the delivery days. Please choose a valid date.'
+      );
       return;
     }
   
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-    setDeliveredAt(localDate);
-    setStartDeliveryDate(localDate.toLocaleDateString('vi-VN'));
-    console.log("DeliveredAt: ", localDate);
-  };  
-
-const handleSubmit = async () => {
+    // Convert the date to local date string
+    const localDateString = date.toLocaleDateString('vi-VN');
+  
+    // Set the delivery date state
+    setDeliveredAt(date);
+    setStartDeliveryDate(localDateString);
+  };
+  
+  
+  const handleSubmit = async () => {
     if (!packageDetail) return;
-
-    if (!fullName || !phone || !address || !city || !country || !numberOfShipment || !startDeliveryDate) {
-        setSnackbarMessage('Please fill in all fields.');
-        setSnackbarVisible(true);
-        return;
+  
+    if (isBusy) {
+      setSnackbarMessage('The system is busy. Please wait a moment.');
+      setSnackbarVisible(true);
+      return;
     }
-
+  
+    if (!fullName || !phone || !address || !city || !country || !numberOfShipment || !startDeliveryDate) {
+      setSnackbarMessage('Please fill in all fields.');
+      setSnackbarVisible(true);
+      return;
+    }
+  
     const deliveryDayNums = deliveryCombo === '2-4-6' ? [1, 3, 5] : [2, 4, 6];
     const deliveryDay = deliveredAt.getDay();
-
+  
     if (!deliveryDayNums.includes(deliveryDay)) {
-        Alert.alert('Error', 'Selected delivery date does not match the delivery days.');
-        return;
+      Alert.alert('Error', 'Selected delivery date does not match the delivery days.');
+      return;
     }
-
+  
     const numShipment = parseInt(numberOfShipment);
     if (isNaN(numShipment)) {
-        Alert.alert('Error', 'Number of Shipments must be a valid number.');
-        return;
+      Alert.alert('Error', 'Number of Shipments must be a valid number.');
+      return;
     }
-
+  
     const formattedDeliveredAt = deliveredAt.toLocaleDateString('vi-VN');
     const formattedPaidAt = paymentMethod === 'VNPay' ? new Date().toLocaleDateString('vi-VN') : null;
-
+  
     const orderData = {
-        packageID: packageDetail._id,
-        shippingAddress: {
-            fullName,
-            phone,
-            address,
-            city,
-            country,
-        },
-        paymentMethod,
-        userID,
-        isPaid: paymentMethod === 'VNPay',
-        paidAt: formattedPaidAt,
-        deliveredAt: formattedDeliveredAt,
-        numberOfShipment: numShipment,
+      packageID: packageDetail._id,
+      shippingAddress: {
+        fullName,
+        phone,
+        address,
+        city,
+        country,
+      },
+      paymentMethod,
+      userID,
+      isPaid: paymentMethod === 'VNPay',
+      paidAt: formattedPaidAt,
+      deliveredAt: formattedDeliveredAt,
+      numberOfShipment: numShipment,
     };
-
+  
     console.log('Order data:', orderData);
-
+  
+    setIsBusy(true); // Set the form to busy state
+  
     try {
-        if (paymentMethod === 'VNPay') {
-            await handleVNPayPayment(orderData);
-        } else {
-            const response = await callApi('POST', '/api/orders', orderData);
-            Alert.alert('Success', 'Order created successfully!');
-            navigation.navigate('OrderResult', { orderData: JSON.stringify(response) });
-        }
+      if (paymentMethod === 'VNPay') {
+        await handleVNPayPayment(orderData, packageDetail.totalPrice * numShipment);
+      } else {
+        const response = await callApi('POST', '/api/orders', orderData);
+        Alert.alert('Success', 'Order created successfully!');
+        navigation.navigate('OrderResult', { orderData: JSON.stringify(response) });
+      }
     } catch (error) {
-        Alert.alert('Error', 'Failed to create order. Please try again.');
+      Alert.alert('Error', 'Failed to create order. Please try again.');
+    } finally {
+      setIsBusy(false); // Reset the form to not busy state
     }
-};
-
-  const handleVNPayPayment = async (orderData: any) => {
+  };
+  
+  const handleVNPayPayment = async (orderData: any, amount: number) => {
     try {
       const response = await callApi('POST', '/api/payments/create_payment_url', {
         ...orderData,
-        amount: packageDetail?.totalPrice,
+        amount,
       });
-
+  
       const vnpUrl = response.vnpUrl;
       if (vnpUrl) {
         await WebBrowser.openBrowserAsync(vnpUrl);
-
+  
         const returnResponse = await callApi('GET', '/api/payments/vnpay_return');
         if (returnResponse) {
           navigation.navigate('OrderResult', { vnpayData: JSON.stringify(returnResponse) });
@@ -190,7 +227,7 @@ const handleSubmit = async () => {
 
   return (
     <View style={styles.container}>
-      <Appbar.Header style={{ backgroundColor: "transparent" }}>
+      <Appbar.Header style={{ backgroundColor: 'transparent' }}>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title="Thanh toán" />
       </Appbar.Header>
@@ -198,34 +235,40 @@ const handleSubmit = async () => {
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
           <View style={styles.section}>
-            <Title style={styles.title}>Địa chỉ giao hàng</Title>
+            <Title style={styles.title}>Delivery address</Title>
             <List.Section>
               {/* Render saved addresses */}
               {addresses.length === 0 ? (
                 <List.Item
-                  title="Chưa có địa chỉ nào"
-                  description="Nhấn vào đây để thêm địa chỉ mới"
+                  title="There are no addresses yet"
+                  description="Click here to add a new address"
                   left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
                   onPress={() => navigation.navigate('AddressScreen')}
-                  underlayColor="transparent"
                 />
-              ) : null}
-              {addresses.map((addr, index) => (
-                <TouchableHighlight key={index} onPress={() => navigation.navigate('AddressScreen')} underlayColor="transparent">
+              ) : (
+                addresses.map((addr, index) => (
                   <List.Item
-                    title={`${addr.fullName}, ${addr.address}, ${addr.city}, ${addr.country}`}
-                    description={addr.phone}
+                    key={index}
+                    title={addr.fullName}
+                    description={`${addr.address}, ${addr.city}, ${addr.country} - ${addr.phone}`}
                     left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
+                    onPress={() => handleAddressSelect(addr)}
                   />
-                </TouchableHighlight>
-              ))}
+                ))
+              )}
             </List.Section>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate('AddressScreen')}
+              style={styles.button}
+            >
+              Add new address
+            </Button>
+            <Divider />
           </View>
 
-          <Divider style={styles.divider} />
-
           <View style={styles.section}>
-            <Title style={styles.title}>Chi tiết đơn hàng</Title>
+            <Title style={styles.title}>Order details</Title>
             {packageDetail && (
               <View>
                 {packageDetail.products.map((product, index) => (
@@ -233,9 +276,9 @@ const handleSubmit = async () => {
                     <Image source={{ uri: product.product.productImage }} style={styles.productImage} />
                     <View style={styles.productDetails}>
                       <Paragraph style={styles.productName}>{product.product.name}</Paragraph>
-                      <Paragraph>Số lượng: {product.quantity}</Paragraph>
-                      <Paragraph>Giá: {product.product.price}</Paragraph>
-                      <Paragraph>Phân loại: {product.product.brandID.name}</Paragraph>
+                      <Paragraph>Quantity: {product.quantity}</Paragraph>
+                      <Paragraph>Price: {product.product.price}</Paragraph>
+                      <Paragraph>Brand: {product.product.brandID.name}</Paragraph>
                     </View>
                   </View>
                 ))}
@@ -243,74 +286,63 @@ const handleSubmit = async () => {
             )}
           </View>
 
-          <Divider style={styles.divider} />
-
           <View style={styles.section}>
-            <Title style={styles.title}>Phương thức thanh toán</Title>
-            <RadioButton.Group onValueChange={(value) => setPaymentMethod(value)} value={paymentMethod}>
-              <View style={styles.radioButton}>
-                <RadioButton value="VNPay" />
-                <Paragraph>Thanh toán VNPay</Paragraph>
-              </View>
-              <View style={styles.radioButton}>
-                <RadioButton value="COD" />
-                <Paragraph>Thanh toán khi nhận hàng (COD)</Paragraph>
-              </View>
+            <Title style={styles.title}>Payment methods</Title>
+            <RadioButton.Group onValueChange={setPaymentMethod} value={paymentMethod}>
+              <RadioButton.Item label="Pay with VNPay" value="VNPay" />
+              <RadioButton.Item label="Payment upon delivery (COD)" value="COD" />
             </RadioButton.Group>
           </View>
 
-          <Divider style={styles.divider} />
-
           <View style={styles.section}>
-            <Title style={styles.title}>Gói giao hàng</Title>
-            <View style={styles.radioButton}>
-              <RadioButton.Group onValueChange={(value) => setDeliveryCombo(value)} value={deliveryCombo}>
-                <View style={styles.radioButton}>
-                  <RadioButton value="2-4-6" />
-                  <Paragraph>Giao hàng các ngày thứ 2-4-6</Paragraph>
-                </View>
-                <View style={styles.radioButton}>
-                  <RadioButton value="3-5-7" />
-                  <Paragraph>Giao hàng các ngày thứ 3-5-7</Paragraph>
-                </View>
-              </RadioButton.Group>
-            </View>
-          </View>
-
-          <View style={styles.section}>
+            <Title style={styles.title}>Shipment Details</Title>
             <TextInput
-              label="Số lượng giao"
+              label="Number of deliveries"
               value={numberOfShipment}
-              onChangeText={setNumberOfShipment}
-              keyboardType="numeric"
+              onChangeText={handleNumberOfShipmentChange}
+              style={styles.input}
+              mode='outlined'
+              keyboardType="number-pad"
+            />
+            <TextInput
+              label="Delivery start date"
+              value={startDeliveryDate}
+              onFocus={() => setDatePickerVisibility(true)}
               style={styles.input}
               mode='outlined'
             />
-          </View>
-
-          <Divider style={styles.divider} />
-
-          <View style={styles.section}>
-            <Title style={styles.title}>Ngày bắt đầu giao</Title>
-            <Button onPress={() => setDatePickerVisibility(true)}>Chọn ngày giao</Button>
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
               onConfirm={handleConfirm}
+              minimumDate={new Date()}
               onCancel={() => setDatePickerVisibility(false)}
+              locale="vi-VN" // Set the locale for the date picker
             />
-            {startDeliveryDate ? <Paragraph>Ngày giao: {startDeliveryDate}</Paragraph> : null}
+            <Paragraph>Choose delivery combo:</Paragraph>
+            <RadioButton.Group onValueChange={(value) => {
+              setDeliveryCombo(value);
+              setStartDeliveryDate('');
+            }} value={deliveryCombo}>
+              <RadioButton.Item label="2-4-6 (Monday, Wednesday, Friday)" value="2-4-6" />
+              <RadioButton.Item label="3-5-7 (Tuesday, Thursday, Saturday)" value="3-5-7" />
+            </RadioButton.Group>
           </View>
-
-          <Divider style={styles.divider} />
 
           <View style={styles.section}>
-            <Title style={styles.title}>Tổng giá</Title>
-            <Paragraph style={{color: 'red', fontWeight: 'bold'}}>{packageDetail ? packageDetail.totalPrice : '0'} VND</Paragraph>
+            <Title style={styles.title}>Total</Title>
+            <Paragraph style={{ color: 'red', fontWeight: 'bold' }}>
+              {totalPrice !== null ? formatCurrency(totalPrice) : ''}
+            </Paragraph>
           </View>
 
-          <Button mode="contained" onPress={handleSubmit} style={styles.button}>
-            Đặt hàng
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            style={styles.button}
+            disabled={isBusy} // Disable the button when busy
+          >
+            {isBusy ? 'Processing...' : 'Order'}
           </Button>
         </View>
       </ScrollView>
@@ -318,7 +350,7 @@ const handleSubmit = async () => {
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
-        duration={3000}
+        duration={Snackbar.DURATION_SHORT}
       >
         {snackbarMessage}
       </Snackbar>
@@ -329,39 +361,13 @@ const handleSubmit = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: 'transparent',
-    marginBottom: 8,
-  },
-  divider: {
-    marginVertical: 8,
-  },
-  button: {
-    marginTop: 16,
-    height: 50,
-    justifyContent: 'center',
-    backgroundColor: '#47CEFF'
-  },
-  radioButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    padding: 20,
   },
   productDetailContainer: {
     flexDirection: 'row',
@@ -377,6 +383,23 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontWeight: 'bold',
+  },
+  section: {
+    marginBottom: 20,
+  },
+  title: {
+    marginBottom: 10,
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  input: {
+    marginBottom: 10,
+  },
+  button: {
+    marginTop: 20,
+    height: 50,
+    justifyContent: 'center',
+    backgroundColor: '#47CEFF'
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Text, View, Image, FlatList, StyleSheet } from 'react-native';
 import { AppDispatch, RootState } from '@/redux/store/store';
@@ -6,6 +6,7 @@ import { fetchOrders, makeSelectOrdersByStatus, selectOrdersLoading, selectOrder
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -13,11 +14,13 @@ const OrderScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const userID = useSelector((state: RootState) => state.user._id);
 
-  useEffect(() => {
-    if (userID) {
-      dispatch(fetchOrders(userID));
-    }
-  }, [dispatch, userID]);
+  useFocusEffect(
+    useCallback(() => {
+      if (userID) {
+        dispatch(fetchOrders(userID));
+      }
+    }, [dispatch, userID])
+  );
 
   return (
     <Tab.Navigator>
@@ -76,21 +79,17 @@ const OrderList = ({ status }: { status: string }) => {
   );
 
   if (loading) {
-    return <Text style={styles.loading}>Loading...</Text>;
+    return <Text>Loading...</Text>;
   }
 
   if (error) {
-    return <Text style={styles.error}>Error: {error}</Text>;
-  }
-
-  if (orders.length === 0) {
-    return <Text style={styles.noOrders}>No orders found.</Text>;
+    return <Text>Error: {error}</Text>;
   }
 
   return (
     <FlatList
       data={orders}
-      keyExtractor={(order) => order._id}
+      keyExtractor={(item) => item._id}
       renderItem={renderOrder}
     />
   );
@@ -99,25 +98,22 @@ const OrderList = ({ status }: { status: string }) => {
 const getStatusStyle = (status: string) => {
   switch (status) {
     case 'Pending':
-      return { color: '#f39c12' };
+      return styles.pending;
+    case 'Out for Delivery':
+      return styles.outForDelivery;
     case 'Delivered':
-      return { color: '#27ae60' };
+      return styles.delivered;
     case 'Cancelled':
-      return { color: '#e74c3c' };
+      return styles.cancelled;
     default:
-      return { color: '#7f8c8d' };
+      return {};
   }
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f8f8f8',
-  },
   orderContainer: {
-    marginBottom: 16,
     padding: 16,
+    marginBottom: 8,
     backgroundColor: '#fff',
     borderRadius: 8,
     shadowColor: '#000',
@@ -132,56 +128,56 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   header: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   status: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
+  },
+  pending: {
+    color: 'orange',
+  },
+  outForDelivery: {
+    color: 'blue',
+  },
+  delivered: {
+    color: 'green',
+  },
+  cancelled: {
+    color: 'red',
   },
   productContainer: {
     flexDirection: 'row',
     marginBottom: 8,
-    backgroundColor: '#f0f0f0',
-    padding: 8,
-    borderRadius: 8,
   },
   image: {
     width: 80,
     height: 80,
-    borderRadius: 8,
-    marginRight: 16,
+    marginRight: 8,
   },
   details: {
     flex: 1,
+    justifyContent: 'center',
   },
   productName: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
   },
   description: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+    color: 'gray',
   },
   price: {
     fontSize: 14,
-    color: '#000',
-    marginTop: 4,
   },
   quantity: {
     fontSize: 14,
-    color: '#000',
-    marginTop: 4,
   },
   totalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 8,
   },
   totalLabel: {
     fontSize: 16,
@@ -190,26 +186,10 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#e74c3c',
-  },
-  loading: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  error: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
-    color: 'red',
-  },
-  noOrders: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
-    color: '#7f8c8d',
   },
   deliveryInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 8,
   },
   deliveryLabel: {
@@ -218,7 +198,7 @@ const styles = StyleSheet.create({
   },
   deliveryCount: {
     fontSize: 16,
-    color: '#2980b9',
+    fontWeight: 'bold',
   },
 });
 

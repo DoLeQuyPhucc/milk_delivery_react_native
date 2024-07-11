@@ -243,7 +243,7 @@ const OrderFormScreen: React.FC = () => {
     <View style={styles.container}>
       <Appbar.Header style={{ backgroundColor: 'transparent' }}>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Thanh toán" />
+        <Appbar.Content title="Check out" />
       </Appbar.Header>
 
       <ScrollView style={styles.scrollView}>

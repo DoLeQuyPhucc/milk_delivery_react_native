@@ -1,6 +1,9 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { createSelector } from "reselect";
-import { RootState } from "@/redux/store/store"; // Ensure this path is correct
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
+import { RootState } from "@/redux/store/store";
 import { callApi } from "@/hooks/useAxios";
 
 interface Product {
@@ -12,19 +15,45 @@ interface Product {
 }
 
 interface Package {
+  _id: string;
   products: { product: Product; quantity: number }[];
   totalPrice: number;
+}
+
+interface Tracking {
+  _id: string;
+  trackingNumber: string;
+  isDelivered: boolean;
+  deliveredAt: string;
+  status: string;
+  isPaid: boolean;
+}
+
+interface CircleShipment {
+  tracking: Tracking[];
+  numberOfShipment: number;
+}
+
+interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
 }
 
 interface Order {
   _id: string;
   package: Package;
-  status: string;
+  shippingAddress: ShippingAddress;
+  circleShipment: CircleShipment;
+  paymentMethod: string;
+  user: string;
+  isPaid: boolean;
+  paidAt: string | null;
   deliveredAt: string;
-  circleShipment: {
-    tracking: { isDelivered: boolean }[];
-    numberOfShipment: number;
-  };
+  status: string;
+  __v: number;
 }
 
 interface OrdersState {
@@ -63,7 +92,6 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.loading = false;
-        console.log("Failed to fetch orders", action.error.message);
         state.error = action.error.message ?? "Failed to fetch orders";
       });
   },

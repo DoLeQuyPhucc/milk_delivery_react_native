@@ -132,7 +132,7 @@ export default function Navigation() {
           <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="FilterResults" component={FilterResults} options={{ headerShown: false }} />
           <Stack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: true }} />
           <Stack.Screen name="OrderForm" component={OrderFormScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderResult" component={OrderResultScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AddressScreen" component={AddressScreen} options={{ headerShown: true }} />

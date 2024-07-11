@@ -6,7 +6,7 @@ import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPackages } from '@/redux/slices/packageSlice';
 import { RootState, AppDispatch } from '@/redux/store/store';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import SkeletonLoader from '@/components/SkeletonHomeLoader';
 import withRefreshControl from '@/components/withRefreshControl';
@@ -18,6 +18,7 @@ type RootStackParamList = {
   CartScreen: undefined;
   OrderResult: undefined;
   SearchResults: { query: string };
+  FilterResults: { brandID: string };
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -35,6 +36,12 @@ const HomeScreen: React.FC = () => {
     dispatch(fetchPackages());
     loadSearchHistory();
   }, [dispatch]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchPackages());
+    }, [dispatch])
+  );
 
   const loadSearchHistory = async () => {
     try {
@@ -75,6 +82,10 @@ const HomeScreen: React.FC = () => {
     Keyboard.dismiss();
   };
 
+  const handleIconPress = (brandID: string) => {
+    navigation.navigate('FilterResults', { brandID });
+  };
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView>
@@ -109,7 +120,7 @@ const HomeScreen: React.FC = () => {
                       onFocus={handleSearchFocus}
                     />
                     <View style={styles.iconContainer}>
-                      <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('OrderResult')}>
+                      <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('CartScreen')}>
                         <Icon name="shopping-cart" size={24} color="#000" />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.iconButton}>
@@ -124,15 +135,15 @@ const HomeScreen: React.FC = () => {
                 style={styles.bannerImage}
               />
               <View style={styles.iconGroupContainer}>
-                <TouchableOpacity style={styles.icon}>
+                <TouchableOpacity style={styles.icon} onPress={() => handleIconPress('66679ee91e0d9ffecd7df6d8')}>
                   <Image source={require('@/assets/images/th-true-milk.png')} style={styles.iconImage} />
                   <Text style={styles.iconText}>TH True Milk</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.icon}>
+                <TouchableOpacity style={styles.icon} onPress={() => handleIconPress('66679ee91e0d9ffecd7df6d7')}>
                   <Image source={require('@/assets/images/vinamilk.png')} style={styles.iconImage} />
                   <Text style={styles.iconText}>Vinamilk</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.icon}>
+                <TouchableOpacity style={styles.icon} onPress={() => handleIconPress('6671d76bbb8c4bcf3267e486')}>
                   <Image source={require('@/assets/images/lothamilk.png')} style={styles.iconImage} />
                   <Text style={styles.iconText}>Lothamilk</Text>
                 </TouchableOpacity>
@@ -293,4 +304,3 @@ const styles = StyleSheet.create({
 });
 
 export default withRefreshControl(HomeScreen);
-

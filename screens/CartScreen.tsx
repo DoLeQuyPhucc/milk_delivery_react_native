@@ -98,9 +98,9 @@ const CartScreen = () => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Giỏ hàng</Text>
+          <Text style={styles.headerTitle}>Cart</Text>
           <TouchableOpacity onPress={() => setEditMode(!editMode)}>
-            <Text style={styles.editButton}>{editMode ? 'Xong' : 'Sửa'}</Text>
+            <Text style={styles.editButton}>{editMode ? 'Done' : 'Edit'}</Text>
           </TouchableOpacity>
         </View>
         {cartItems.length > 0 ? (
@@ -123,7 +123,7 @@ const CartScreen = () => {
                 <Image source={{ uri: item.productImage }} style={styles.image} />
                 <View style={styles.itemDetails}>
                   <Text style={styles.productName}>{item.name}</Text>
-                  <Text style={styles.priceText}>Giá: {item.price}đ</Text>
+                  <Text style={styles.priceText}>Price: {item.price}đ</Text>
                 </View>
               </View>
             </Swipeable>
@@ -131,13 +131,13 @@ const CartScreen = () => {
         ) : (
           <View style={styles.centered}>
             <Image source={require('../assets/images/cart-empty.png')} style={styles.cartImage} />
-            <Text style={styles.emptyCartText}>"Hông" có gì trong giỏ hết!</Text>
-            <Text style={styles.emptyCartText}>Lướt Milk Delivery, lựa hàng ngay đi!</Text>
+            <Text style={styles.emptyCartText}>There is nothing in the cart yet!</Text>
+            <Text style={styles.emptyCartText}>Browse Milk Delivery, choose your products now!</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('Main')}
+              onPress={() => navigation.navigate('Main', { screen: 'Home' })}
               style={[styles.buttonBuyWhenEmpty]}
             >
-              <Text style={{ color: '#FFFFFF' }}>Mua sắm ngay!</Text>
+              <Text style={{ color: '#FFFFFF' }}>Shop now!</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -151,17 +151,17 @@ const CartScreen = () => {
           {editMode ? (
             <View style={styles.editModeButtons}>
               <TouchableOpacity style={styles.editFooterButton}>
-                <Text style={styles.editFooterButtonText}>Lưu vào đã thích</Text>
+                <Text style={styles.editFooterButtonText}>Saved as liked</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.editFooterButton} onPress={handleDeleteSelectedItems}>
-                <Text style={styles.editFooterButtonText}>Xóa</Text>
+                <Text style={styles.editFooterButtonText}>Delete</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.orderContainer}>
-              <Text style={styles.totalPriceText}>Tổng: {calculateTotalPrice()}đ</Text>
+              <Text style={styles.totalPriceText}>Total: {calculateTotalPrice()}đ</Text>
               <TouchableOpacity style={styles.orderButton} onPress={() => navigation.navigate('OrderForm')}>
-                <Text style={styles.orderButtonText}>Mua hàng ({selectedItems.length})</Text>
+                <Text style={styles.orderButtonText}>Purchase ({selectedItems.length})</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -170,13 +170,13 @@ const CartScreen = () => {
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text>Bạn có muốn bỏ {selectedItems.length} sản phẩm?</Text>
+            <Text>Do you want to remove {selectedItems.length} products?</Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={confirmDelete}>
-                <Text style={styles.modalButtonText}>Có</Text>
+                <Text style={styles.modalButtonText}>Yes</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalButtonText}>Không</Text>
+                <Text style={styles.modalButtonText}>No</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -195,7 +195,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    marginTop: 50,
   },
   header: {
     flexDirection: 'row',

@@ -22,7 +22,7 @@ import { callApi } from "@/hooks/useAxios";
 import { useNavigation } from "@/hooks/useNavigation";
 
 const LoginScreen: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
@@ -32,7 +32,7 @@ const LoginScreen: React.FC = () => {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const userData = await dispatch(loginUser({ email, password })).unwrap();
+      const userData = await dispatch(loginUser({ userName, password })).unwrap();
       await storeTokens(userData.accessToken, userData.refreshToken);
       const userProfile = await fetchUserProfile();
       dispatch(setUser(userProfile));
@@ -82,10 +82,9 @@ const LoginScreen: React.FC = () => {
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
           <AppTextInput 
-            placeholder="Email" 
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            placeholder="userName" 
+            value={userName}
+            onChangeText={setUserName}
             autoCapitalize="none"
           />
           <AppTextInput 
@@ -112,7 +111,7 @@ const LoginScreen: React.FC = () => {
         </TouchableOpacity>
         {status === 'failed' && (
           <Text style={styles.error}>
-            Wrong email or password
+            Wrong userName or password
           </Text>
         )}
         <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")} style={{ padding: Spacing }}>

@@ -15,11 +15,14 @@ const AddressScreen: React.FC = () => {
     const fetchAddresses = async () => {
       try {
         const addressesJSON = await AsyncStorage.getItem(`addresses_${userID}`);
+        const selectedAddressJSON = await AsyncStorage.getItem(`selectedAddress_${userID}`);
         if (addressesJSON) {
           const storedAddresses = JSON.parse(addressesJSON);
           setAddresses(storedAddresses);
-          if (storedAddresses.length > 0) {
-            handleAddressChoose(storedAddresses[0]); // Select first address by default
+          if (selectedAddressJSON) {
+            const selectedAddress = JSON.parse(selectedAddressJSON);
+            const updatedAddresses = [selectedAddress, ...storedAddresses.filter((addr: any) => addr.address !== selectedAddress.address)];
+            setAddresses(updatedAddresses);
           }
         }
       } catch (error) {
@@ -42,14 +45,16 @@ const AddressScreen: React.FC = () => {
     }
   };
 
-  const handleAddressChoose = (selectedAddress: any) => {
-    // // Navigate back to OrderFormScreen and pass selected address
-    // router.replace({
-    //   pathname: 'OrderFormScreen',
-    //   params: {
-    //     selectedAddress: selectedAddress,
-    //   },
-    // });
+  const handleAddressChoose = async (selectedAddress: any) => {
+    try {
+      await AsyncStorage.setItem(`selectedAddress_${userID}`, JSON.stringify(selectedAddress));
+      const updatedAddresses = [selectedAddress, ...addresses.filter((addr) => addr.address !== selectedAddress.address)];
+      await AsyncStorage.setItem(`addresses_${userID}`, JSON.stringify(updatedAddresses));
+      setAddresses(updatedAddresses);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Failed to save selected address:', error);
+    }
   };
 
   return (
@@ -70,6 +75,7 @@ const AddressScreen: React.FC = () => {
               />
             )}
             onPress={() => handleAddressChoose(addr)}
+            style={index === 0 ? styles.selectedAddress : null}
           />
         ))}
       </List.Section>
@@ -99,6 +105,9 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: 'white',
     fontSize: 16,
+  },
+  selectedAddress: {
+    backgroundColor: '#cceeff',
   },
 });
 

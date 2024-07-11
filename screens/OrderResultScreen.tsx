@@ -77,8 +77,9 @@ const OrderResultScreen: React.FC = () => {
           data={packages}
           renderItem={renderPackageItem}
           keyExtractor={(item) => item._id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    marginTop: 50,
     backgroundColor: '#fff',
   },
   successMessage: {
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#fe7013',
+    backgroundColor: '#47CEFF',
     padding: 12,
     borderRadius: 4,
     flex: 1,
@@ -123,6 +123,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
+  row: {
+    flex: 1,
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
   packageItem: {
     backgroundColor: '#fff',
     padding: 10,
@@ -133,9 +138,7 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     elevation: 2,
     marginBottom: 10,
-    marginRight: 10,
-    width: 200,
-    height: 280,
+    width: '48%',
   },
   productImage: {
     width: '100%',

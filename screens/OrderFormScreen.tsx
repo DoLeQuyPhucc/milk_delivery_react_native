@@ -61,12 +61,6 @@ const OrderFormScreen: React.FC = () => {
     fetchAddresses();
   }, [fetchAddresses]);
 
-  useEffect(() => {
-    if (addresses.length > 0) {
-      handleAddressSelect(addresses[0]);
-    }
-  }, [addresses]);
-
   useFocusEffect(
     useCallback(() => {
       // Fetch addresses when the screen is focused
@@ -86,16 +80,34 @@ const OrderFormScreen: React.FC = () => {
       }
     }
   }, [packageDetail, numberOfShipment]);
-  
-  
-  const saveAddresses = async (updatedAddresses: any[]) => {
+
+  const loadAddress = async () => {
     try {
-      await AsyncStorage.setItem(`addresses_${userID}`, JSON.stringify(updatedAddresses));
-      setAddresses(updatedAddresses);
+      const storedAddress = await AsyncStorage.getItem(`selectedAddress_${userID}`);
+      if (storedAddress) {
+        const addressData = JSON.parse(storedAddress);
+        setFullName(addressData.fullName);
+        setPhone(addressData.phone);
+        setAddress(addressData.address);
+        setCity(addressData.city);
+        setCountry(addressData.country);
+      }
     } catch (error) {
-      console.error('Failed to save addresses:', error);
+      console.error('Failed to load address from AsyncStorage:', error);
     }
   };
+
+  useEffect(() => {
+    loadAddress();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadAddress();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const handleNumberOfShipmentChange = (value: string) => {
     setNumberOfShipment(value);
@@ -153,8 +165,8 @@ const OrderFormScreen: React.FC = () => {
       return;
     }
   
-    const formattedDeliveredAt = deliveredAt.toLocaleDateString('vi-VN');
-    const formattedPaidAt = paymentMethod === 'VNPay' ? new Date().toLocaleDateString('vi-VN') : null;
+    const formattedDeliveredAt = deliveredAt.toISOString().split('T')[0];
+    const formattedPaidAt = paymentMethod === 'VNPay' ? new Date().toISOString().split('T')[0] : null;
   
     const orderData = {
       packageID: packageDetail._id,
@@ -185,7 +197,17 @@ const OrderFormScreen: React.FC = () => {
         Alert.alert('Success', 'Order created successfully!');
         navigation.navigate('OrderResult', { orderData: JSON.stringify(response) });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.log("Error: ", error);
+      
+      if (error.response) {
+        console.log("Server responded with:", error.response.data);
+      } else if (error.request) {
+        console.log("No response received:", error.request);
+      } else {
+        console.log("Error setting up the request:", error.message);
+      }
+  
       Alert.alert('Error', 'Failed to create order. Please try again.');
     } finally {
       setIsBusy(false); // Reset the form to not busy state
@@ -217,14 +239,6 @@ const OrderFormScreen: React.FC = () => {
     }
   };
 
-  const handleAddressSelect = (selectedAddress: any) => {
-    setFullName(selectedAddress.fullName);
-    setPhone(selectedAddress.phone);
-    setAddress(selectedAddress.address);
-    setCity(selectedAddress.city);
-    setCountry(selectedAddress.country);
-  };
-
   return (
     <View style={styles.container}>
       <Appbar.Header style={{ backgroundColor: 'transparent' }}>
@@ -234,10 +248,10 @@ const OrderFormScreen: React.FC = () => {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
-          <View style={styles.section}>
-            <Title style={styles.title}>Delivery address</Title>
+        <View style={styles.section}>
+          <Title style={styles.title}>Delivery address</Title>
             <List.Section>
-              {/* Render saved addresses */}
+              {/* Render saved address at index 0 */}
               {addresses.length === 0 ? (
                 <List.Item
                   title="There are no addresses yet"
@@ -246,26 +260,17 @@ const OrderFormScreen: React.FC = () => {
                   onPress={() => navigation.navigate('AddressScreen')}
                 />
               ) : (
-                addresses.map((addr, index) => (
-                  <List.Item
-                    key={index}
-                    title={addr.fullName}
-                    description={`${addr.address}, ${addr.city}, ${addr.country} - ${addr.phone}`}
-                    left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
-                    onPress={() => handleAddressSelect(addr)}
-                  />
-                ))
+                <List.Item
+                  title={addresses[0].fullName}
+                  description={`${addresses[0].address}, ${addresses[0].city}, ${addresses[0].country} - ${addresses[0].phone}`}
+                  left={(props) => <List.Icon {...props} icon="map-marker" color="red" />}
+                  onPress={() => navigation.navigate('AddressScreen')}
+                />
               )}
             </List.Section>
-            <Button
-              mode="contained"
-              onPress={() => navigation.navigate('AddressScreen')}
-              style={styles.button}
-            >
-              Add new address
-            </Button>
-            <Divider />
-          </View>
+          <Divider />
+        </View>
+
 
           <View style={styles.section}>
             <Title style={styles.title}>Order details</Title>

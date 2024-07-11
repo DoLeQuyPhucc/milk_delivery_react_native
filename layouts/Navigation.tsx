@@ -30,6 +30,8 @@ import NotificationScreen from '@/screens/NotificationScreen';
 import OrderDetailScreen from '@/screens/OrderDetail';
 import { DEEP_LINKING_PREFIX } from '@env';
 import SearchResultsScreen from '@/screens/SearchResultScreen';
+import linking from '@/config/linking';
+import FilterResults from '@/screens/FilterResults';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -53,7 +55,7 @@ const tabBarProps: TabBarProps[] = [
     },
   },
   {
-    route: 'Notifitcations',
+    route: 'Notifications',
     component: NotificationScreen,
     tabBarLabel: 'Notifitcations',
     tabBarIconProps: {
@@ -115,22 +117,7 @@ export default function Navigation() {
     <Provider store={store}>
       <NavigationContainer
         theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
-        linking={{
-          prefixes: [DEEP_LINKING_PREFIX],
-          config: {
-            screens: {
-              WelcomeScreen: 'welcome',
-              LoginScreen: 'login',
-              RegisterScreen: 'register',
-              ProductDetail: 'product-detail',
-              PackageDetail: 'package-detail',
-              OrderForm: 'order-form',
-              OrderResult: 'order-result',
-              CartScreen: 'cart',
-              NotFound: '*',
-            },
-          },
-        }}
+        linking={linking}
       >
         <Stack.Navigator initialRouteName={initialRoute}>
           <Stack.Screen name="Main" options={{ headerShown: false }}>
@@ -143,6 +130,7 @@ export default function Navigation() {
           <Stack.Screen name="PackageDetail" component={PackageDetail} options={{ headerShown: false }} />
           <Stack.Screen name="CartScreen" component={CartScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="FilterResults" component={FilterResults} options={{ headerShown: false }} />
           <Stack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrderForm" component={OrderFormScreen} options={{ headerShown: false }} />

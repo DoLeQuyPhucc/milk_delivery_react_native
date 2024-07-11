@@ -18,6 +18,7 @@ export type RootStackParamList = {
   OrderResult: { orderData: string } | { vnpayData: string };
   AddressScreen: undefined;
   AddAddressScreen: undefined;
+  FilterResults: { brandName: string };
 };
 
 export type BottomTabParamList = {

@@ -3,7 +3,7 @@ import { callApi } from "@/hooks/useAxios";
 
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
-  async (credentials: { email: string; password: string }) => {
+  async (credentials: { userName: string; password: string }) => {
     try {
       const data = await callApi("POST", "/api/auth/signin", credentials);
       return data;

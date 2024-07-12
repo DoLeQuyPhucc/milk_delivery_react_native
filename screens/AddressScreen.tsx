@@ -1,37 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Title, Divider, List, IconButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store/store';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useFocusEffect } from '@react-navigation/native';
 
 const AddressScreen: React.FC = () => {
   const [addresses, setAddresses] = useState<any[]>([]);
   const userID = useSelector((state: RootState) => state.user._id);
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      try {
-        const addressesJSON = await AsyncStorage.getItem(`addresses_${userID}`);
-        const selectedAddressJSON = await AsyncStorage.getItem(`selectedAddress_${userID}`);
-        if (addressesJSON) {
-          const storedAddresses = JSON.parse(addressesJSON);
-          setAddresses(storedAddresses);
-          if (selectedAddressJSON) {
-            const selectedAddress = JSON.parse(selectedAddressJSON);
-            const updatedAddresses = [selectedAddress, ...storedAddresses.filter((addr: any) => addr.address !== selectedAddress.address)];
-            setAddresses(updatedAddresses);
-          }
+  const fetchAddresses = async () => {
+    try {
+      const addressesJSON = await AsyncStorage.getItem(`addresses_${userID}`);
+      const selectedAddressJSON = await AsyncStorage.getItem(`selectedAddress_${userID}`);
+      if (addressesJSON) {
+        const storedAddresses = JSON.parse(addressesJSON);
+        setAddresses(storedAddresses);
+        if (selectedAddressJSON) {
+          const selectedAddress = JSON.parse(selectedAddressJSON);
+          const updatedAddresses = [selectedAddress, ...storedAddresses.filter((addr: any) => addr.address !== selectedAddress.address)];
+          setAddresses(updatedAddresses);
         }
-      } catch (error) {
-        console.error('Failed to load addresses:', error);
       }
-    };
+    } catch (error) {
+      console.error('Failed to load addresses:', error);
+    }
+  };
 
-    fetchAddresses();
-  }, [userID]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchAddresses();
+    }, [userID])
+  );
 
   const removeAddress = async (index: number) => {
     try {

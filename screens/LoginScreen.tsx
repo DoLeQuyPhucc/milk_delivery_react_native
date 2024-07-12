@@ -7,6 +7,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/redux/slices/authSlice";
@@ -21,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AppTextInput from "../components/AppTextInput";
 import { callApi } from "@/hooks/useAxios";
 import { useNavigation } from "@/hooks/useNavigation";
+import { useFocusEffect } from "@react-navigation/native";
 
 const LoginScreen: React.FC = () => {
   const [userName, setUserName] = useState('');
@@ -29,6 +31,18 @@ const LoginScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation();
   const { status, error } = useSelector((state: RootState) => state.auth);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
 
   const handleLogin = async () => {
     setLoading(true);

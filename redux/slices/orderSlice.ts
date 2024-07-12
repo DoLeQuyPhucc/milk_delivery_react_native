@@ -71,8 +71,14 @@ const initialState: OrdersState = {
 export const fetchOrders = createAsyncThunk(
   "orders/fetchOrders",
   async (userId: string) => {
-    const data = await callApi("GET", `/api/orders/user/${userId}`);
-    return data as Order[];
+    try {
+      const data = await callApi("GET", `/api/orders/user/${userId}`);
+      console.log("API response data:", data); // Log dữ liệu trả về từ API
+      return data as Order[];
+    } catch (error) {
+      console.log("API error:", error); // Log lỗi trả về từ API
+      throw error;
+    }
   }
 );
 
@@ -92,7 +98,11 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message ?? "Failed to fetch orders";
+        if (action.error.message === "Request failed with status code 404") {
+          state.error = "No orders found for this user";
+        } else {
+          state.error = action.error.message ?? "Failed to fetch orders";
+        }
       });
   },
 });

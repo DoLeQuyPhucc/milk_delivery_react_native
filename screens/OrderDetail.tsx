@@ -21,8 +21,15 @@ const OrderDetailScreen = ({ route, navigation }: any) => {
   const [selectedTrackingId, setSelectedTrackingId] = useState<string | null>(null);
 
   if (!order) {
-    return <Text style={styles.error}>Order not found</Text>;
+    return (
+      <View style={styles.noOrderContainer}>
+        <Text style={styles.error}>No orders found</Text>
+        <Button title="Go to Orders" onPress={() => navigation.navigate('Orders')} />
+        <Button title="Go to Home" onPress={() => navigation.navigate('Home')} />
+      </View>
+    );
   }
+  
 
   const handleReschedule = (trackingId: string) => {
     setSelectedTrackingId(trackingId);
@@ -136,6 +143,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     color: 'red',
+  },
+  noOrderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
   },
 });
 

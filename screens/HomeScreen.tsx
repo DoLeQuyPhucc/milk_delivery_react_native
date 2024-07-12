@@ -120,8 +120,8 @@ const HomeScreen: React.FC = () => {
                       onFocus={handleSearchFocus}
                     />
                     <View style={styles.iconContainer}>
-                      <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('CartScreen')}>
-                        <Icon name="shopping-cart" size={24} color="#000" />
+                      <TouchableOpacity style={styles.iconButton}>
+                        <Icon name="qr-code" size={24} color="#000" />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.iconButton}>
                         <Icon name="notifications" size={24} color="#000" />

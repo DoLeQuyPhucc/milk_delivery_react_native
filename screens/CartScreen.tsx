@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   buttonBuyWhenEmpty: {
-    backgroundColor: '#FF6F61',
+    backgroundColor: '#47CEFF',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     fontSize: 16,
-    color: 'red',
+    color: '#47CEFF',
   },
   itemContainer: {
     flexDirection: 'row',
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   orderButton: {
-    backgroundColor: '#FF6F61',
+    backgroundColor: '#47CEFF',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   editFooterButton: {
-    backgroundColor: '#FF6F61',
+    backgroundColor: '#47CEFF',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,

@@ -19,6 +19,8 @@ export type RootStackParamList = {
   AddressScreen: undefined;
   AddAddressScreen: undefined;
   FilterResults: { brandName: string };
+  EditProfileScreen: undefined;
+  ChangePasswordScreen: undefined;
 };
 
 export type BottomTabParamList = {

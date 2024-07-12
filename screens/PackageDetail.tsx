@@ -35,36 +35,36 @@ const PackageDetail: React.FC = () => {
     dispatch(fetchPackageById(id));
   }, [dispatch, id]);
 
-  const handleIncrease = () => {
-    setQuantity((prev) => prev + 1);
-  };
+  // const handleIncrease = () => {
+  //   setQuantity((prev) => prev + 1);
+  // };
 
-  const handleDecrease = () => {
-    if (quantity > 0) {
-      setQuantity((prev) => prev - 1);
-    }
-  };
+  // const handleDecrease = () => {
+  //   if (quantity > 0) {
+  //     setQuantity((prev) => prev - 1);
+  //   }
+  // };
 
-  const handleAddToCart = () => {
-    if (packageDetail) {
-      const cartItem: CartItem = {
-        id: packageDetail._id,
-        name: packageDetail.products[0]?.product.name || 'Unknown',
-        price: packageDetail.totalPrice,
-        quantity: quantity,
-        productImage: packageDetail.products[0]?.product.productImage || '',
-      };
+  // const handleAddToCart = () => {
+  //   if (packageDetail) {
+  //     const cartItem: CartItem = {
+  //       id: packageDetail._id,
+  //       name: packageDetail.products[0]?.product.name || 'Unknown',
+  //       price: packageDetail.totalPrice,
+  //       quantity: quantity,
+  //       productImage: packageDetail.products[0]?.product.productImage || '',
+  //     };
 
-      dispatch(addToCart(cartItem));
-      if (toastRef.current) {
-        toastRef.current.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Item added to cart successfully!',
-        });
-      }
-    }
-  };
+  //     dispatch(addToCart(cartItem));
+  //     if (toastRef.current) {
+  //       toastRef.current.show({
+  //         type: 'success',
+  //         text1: 'Success',
+  //         text2: 'Item added to cart successfully!',
+  //       });
+  //     }
+  //   }
+  // };
 
   if (status === 'loading') {
     return (
@@ -88,9 +88,8 @@ const PackageDetail: React.FC = () => {
             onPress: () => navigation.goBack(),
           }}
           rightComponent={{
-            icon: 'shopping-cart',
+            icon: 'notifications',
             color: 'black',
-            onPress: () => navigation.navigate('CartScreen'),
           }}
           containerStyle={{ backgroundColor: '#f2f2f2' }}
         />
@@ -120,14 +119,14 @@ const PackageDetail: React.FC = () => {
         )}
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[styles.cartIconContainer, styles.iconButton, { backgroundColor: 'green' }]}
             onPress={handleAddToCart}
           >
             <Icon name="shopping-cart" size={24} color="#FFF" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
-            style={[styles.orderButton, { backgroundColor: '#FF6F61' }]}
+            style={[styles.orderButton, { backgroundColor: '#47CEFF' }]}
             onPress={() => navigation.navigate('OrderForm')}
           >
             <Text style={styles.orderButtonText}>Order</Text>

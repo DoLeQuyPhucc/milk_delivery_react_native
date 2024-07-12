@@ -32,6 +32,8 @@ import { DEEP_LINKING_PREFIX } from '@env';
 import SearchResultsScreen from '@/screens/SearchResultScreen';
 import linking from '@/config/linking';
 import FilterResults from '@/screens/FilterResults';
+import EditProfileScreen from '@/screens/EditProfileScreen';
+import ChangePasswordScreen from '@/screens/ChangePasswordScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -137,6 +139,8 @@ export default function Navigation() {
           <Stack.Screen name="OrderResult" component={OrderResultScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AddressScreen" component={AddressScreen} options={{ headerShown: true }} />
           <Stack.Screen name="AddAddressScreen" component={AddAddressScreen} options={{ headerShown: true }} />
+          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} options={{ headerShown: true }} />
+          <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} options={{ headerShown: true }} />
         </Stack.Navigator>
         <Toast />
       </NavigationContainer>

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/redux/slices/authSlice";
@@ -39,12 +40,18 @@ const LoginScreen: React.FC = () => {
       navigation.navigate('Main', {
         screen: 'Home'
       });
-    } catch (err) {
-      console.error('Login failed:', err);
+    } catch (err: any) {
+      // console.error('Login failed:', err);
+      if (err.message) {
+        Alert.alert('Error', err.message);
+      } else {
+        Alert.alert('Error', 'There was an error logging in');
+      }
     } finally {
       setLoading(false);
     }
   };
+  
 
   const storeTokens = async (accessToken: string, refreshToken: string) => {
     try {
@@ -82,7 +89,7 @@ const LoginScreen: React.FC = () => {
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
           <AppTextInput 
-            placeholder="userName" 
+            placeholder="Username" 
             value={userName}
             onChangeText={setUserName}
             autoCapitalize="none"
@@ -95,9 +102,9 @@ const LoginScreen: React.FC = () => {
             autoCapitalize="none"
           />
         </View>
-        <View>
+        {/* <View>
           <Text style={styles.forgotPassword}>Forgot your password ?</Text>
-        </View>
+        </View> */}
         <TouchableOpacity
           style={styles.signInButton}
           onPress={handleLogin}
@@ -111,7 +118,7 @@ const LoginScreen: React.FC = () => {
         </TouchableOpacity>
         {status === 'failed' && (
           <Text style={styles.error}>
-            Wrong userName or password
+            Wrong username or password
           </Text>
         )}
         <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")} style={{ padding: Spacing }}>
@@ -139,7 +146,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.xLarge,
-    color: Colors.warmOrange,
+    color: Colors.commonBlue,
     fontFamily: Font["poppins-bold"],
     marginVertical: Spacing * 3,
   },
@@ -152,15 +159,15 @@ const styles = StyleSheet.create({
   forgotPassword: {
     fontFamily: Font["poppins-semiBold"],
     fontSize: FontSize.small,
-    color: Colors.warmOrange,
+    color: Colors.commonBlue,
     alignSelf: "flex-end",
   },
   signInButton: {
     padding: Spacing * 2,
-    backgroundColor: Colors.warmOrange,
+    backgroundColor: Colors.commonBlue,
     marginVertical: Spacing * 3,
     borderRadius: Spacing,
-    shadowColor: Colors.warmOrange,
+    shadowColor: Colors.commonBlue,
     shadowOffset: { width: 0, height: Spacing },
     shadowOpacity: 0.3,
     shadowRadius: Spacing,
@@ -184,7 +191,7 @@ const styles = StyleSheet.create({
   },
   orContinueText: {
     fontFamily: Font["poppins-semiBold"],
-    color: Colors.warmOrange,
+    color: Colors.commonBlue,
     textAlign: "center",
     fontSize: FontSize.small,
   },

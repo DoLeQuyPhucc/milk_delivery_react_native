@@ -7,7 +7,10 @@ export const loginUser = createAsyncThunk(
     try {
       const data = await callApi("POST", "/api/auth/signin", credentials);
       return data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw new Error(error.response.data.message || "Login failed");
+      }
       throw error;
     }
   }

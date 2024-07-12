@@ -220,6 +220,9 @@ const OrderFormScreen: React.FC = () => {
         ...orderData,
         amount,
       });
+
+      console.log("Order Data VNPay: ", orderData);
+      
   
       const vnpUrl = response.vnpUrl;
       if (vnpUrl) {

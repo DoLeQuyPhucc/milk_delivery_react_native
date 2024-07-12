@@ -46,7 +46,7 @@ const WelcomeScreen: React.FC = () => {
           <Text
             style={{
               fontSize: FontSize.xxLarge,
-              color: Colors.warmOrange,
+              color: Colors.commonBlue,
               fontFamily: Font["poppins-bold"],
               textAlign: "center",
             }}
@@ -76,12 +76,12 @@ const WelcomeScreen: React.FC = () => {
           <TouchableOpacity
             onPress={() => navigation.navigate("LoginScreen")}
             style={{
-              backgroundColor: Colors.warmOrange,
+              backgroundColor: Colors.commonBlue,
               paddingVertical: Spacing * 1.5,
               paddingHorizontal: Spacing * 2,
               width: "48%",
               borderRadius: Spacing,
-              shadowColor: Colors.warmOrange,
+              shadowColor: Colors.commonBlue,
               shadowOffset: {
                 width: 0,
                 height: Spacing,

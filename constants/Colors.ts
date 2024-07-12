@@ -12,6 +12,7 @@ const blue = "#1F41BB";
 const gray = "#ECECEC";
 const lightBlue = "#f1f4ff";
 const warmOrange = "#FFA07A";
+const commonBlue = "#47CEFF";
 
 export const Colors = {
   light: {
@@ -43,4 +44,5 @@ export default {
   lightPrimary: lightBlue,
   gray: gray,
   warmOrange: warmOrange,
+  commonBlue: commonBlue,
 };

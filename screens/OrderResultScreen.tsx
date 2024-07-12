@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Image, BackHandler } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store/store';
 import { fetchPackages } from '@/redux/slices/packageSlice';
 import { Divider } from 'react-native-elements';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Package {
   _id: string;
@@ -32,6 +33,18 @@ const OrderResultScreen: React.FC = () => {
   useEffect(() => {
     dispatch(fetchPackages());
   }, [dispatch]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        return true; // Ngăn chặn việc quay lại
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
 
   const handleBuyAgain = () => {
     navigation.navigate('Main', {
